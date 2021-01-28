@@ -7,7 +7,7 @@ COMMONDIR=../common
 ifeq ($(COMP),gnu)
 CXX=mpicxx
 CC=gcc
-HIPCC=hipcc
+HIPCC=hipcc --x cu
 HIPFLAGS=-g -O3 -I$(COMMONDIR)
 CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) 
 LDFLAGS=
@@ -24,7 +24,7 @@ all: $(EXE)
 
 
 core.o: core.cpp heat.h
-core_hip.o: core_hip.cu heat.h
+core_hip.o: core_hip.cpp heat.h
 utilities.o: utilities.cpp heat.h
 setup.o: setup.cpp heat.h
 io.o: io.cpp heat.h
