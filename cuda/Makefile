@@ -10,7 +10,7 @@ CC=pgcc
 NVCC=nvcc -ccbin pgc++
 NVCCFLAGS=-g -O3 -I$(COMMONDIR)
 CCFLAGS=-g -O3 -I$(COMMONDIR)
-LDFLAGS=
+LDFLAGS=-L$(CUDA_INSTALL_ROOT)/lib64
 LIBS=-lpng -lcudart
 endif
 
