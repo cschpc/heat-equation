@@ -51,6 +51,9 @@ contains
 
   subroutine parallel_setup(parallel, nx, ny)
     use mpi
+#ifdef _OPENACC
+    use openacc
+#endif
 
     implicit none
 
@@ -59,6 +62,11 @@ contains
 
     integer :: ny_local
     integer :: ierr
+
+#ifdef _OPENACC
+    integer :: nodeRank, nodeProcs, devCount
+    integer :: intranodecomm
+#endif
 
     call mpi_comm_size(MPI_COMM_WORLD, parallel%size, ierr)
 
@@ -81,6 +89,25 @@ contains
     if (parallel%nright > parallel%size - 1) then
        parallel%nright = MPI_PROC_NULL
     end if
+
+#ifdef _OPENACC
+    call mpi_comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,  MPI_INFO_NULL, intranodecomm, ierr);
+
+    call mpi_comm_rank(intranodecomm, nodeRank, ierr);
+    call mpi_comm_size(intranodecomm, nodeProcs, ierr);
+
+    call mpi_comm_free(intranodecomm, ierr)
+
+    devCount = acc_get_num_devices(acc_get_device_type())
+
+    if (nodeProcs > devCount) then
+        write(*,*) "Not enough GPUs for all processes in the node"
+        call mpi_abort(MPI_COMM_WORLD, -2, ierr)
+    end if
+
+    call acc_set_device_num(nodeRank, acc_get_device_type())
+#endif
+
 
   end subroutine parallel_setup
 

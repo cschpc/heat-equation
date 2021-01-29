@@ -51,6 +51,9 @@ contains
 
   subroutine parallel_setup(parallel, nx, ny)
     use mpi
+#ifdef _OPENMP
+    use omp_lib
+#endif
 
     implicit none
 
@@ -60,6 +63,10 @@ contains
     integer :: ny_local
     integer :: ierr
 
+#ifdef _OPENMP
+    integer :: nodeRank, nodeProcs, devCount
+    integer :: intranodecomm
+#endif
     call mpi_comm_size(MPI_COMM_WORLD, parallel%size, ierr)
 
     if (present(ny)) then
@@ -81,6 +88,25 @@ contains
     if (parallel%nright > parallel%size - 1) then
        parallel%nright = MPI_PROC_NULL
     end if
+
+#ifdef _OPENMP
+    call mpi_comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,  MPI_INFO_NULL, intranodecomm, ierr);
+
+    call mpi_comm_rank(intranodecomm, nodeRank, ierr);
+    call mpi_comm_size(intranodecomm, nodeProcs, ierr);
+
+    call mpi_comm_free(intranodecomm, ierr)
+
+    devCount = omp_get_num_devices()
+
+    if (nodeProcs > devCount) then
+        write(*,*) "Not enough GPUs for all processes in the node"
+        call mpi_abort(MPI_COMM_WORLD, -2, ierr)
+    end if
+
+    call omp_set_default_device(nodeRank)
+#endif
+
 
   end subroutine parallel_setup
 
