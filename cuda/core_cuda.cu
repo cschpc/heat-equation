@@ -19,8 +19,10 @@ __global__ void evolve_kernel(double *currdata, double *prevdata, double a, doub
      * are not updated. */
     int ind, ip, im, jp, jm;
 
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;        
+    // CUDA threads are arranged in column major order; thus j index from x, i from y
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.y * blockDim.y + threadIdx.y;        
+
     if (i > 0 && j > 0 && i < nx+1 && j < ny+1) {
         ind = i * (ny + 2) + j;
         ip = (i + 1) * (ny + 2) + j;
