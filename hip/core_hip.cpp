@@ -50,8 +50,9 @@ void evolve(field *curr, field *prev, double a, double dt)
     /* CUDA thread settings */
     const int blocksize = 16;  //!< CUDA thread block dimension
     dim3 dimBlock(blocksize, blocksize); 
-    dim3 dimGrid((nx + 2 + blocksize - 1) / blocksize, 
-                 (ny + 2 + blocksize - 1) / blocksize); 
+    // CUDA threads are arranged in column major order; thus make ny x nx grid
+    dim3 dimGrid((ny + 2 + blocksize - 1) / blocksize, 
+                 (nx + 2 + blocksize - 1) / blocksize); 
 
     hipLaunchKernelGGL(evolve_kernel, dim3(dimGrid), dim3(dimBlock), 0, 0, curr->devdata, prev->devdata, a, dt, nx, ny, dx2, dy2);
     hipDeviceSynchronize();
