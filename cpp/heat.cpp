@@ -17,7 +17,7 @@ void Field::setup(int nx_in, int ny_in, ParallelData parallel)
    // size includes ghost layers
    std::size_t field_size = (nx + 2) * (ny + 2);
 
-   temperature.reserve(field_size);
+   temperature = std::vector<double> (field_size);
 }
 
 void Field::swap(Field& other)
@@ -40,11 +40,11 @@ void Field::generate(ParallelData parallel) {
             dx = i + parallel.rank * nx - nx_full / 2 + 1;
             dy = j - ny / 2 + 1;
             if (dx * dx + dy * dy < radius * radius) {
-                // data[ind] = 5.0;
-                temperature.push_back(5.0);
+                temperature[ind] = 5.0;
+                // temperature.push_back(5.0);
             } else {
-                // data[ind] = 65.0;
-                temperature.push_back(65.0);
+                temperature[ind] = 65.0;
+                // temperature.push_back(65.0);
             }
         }
     }
