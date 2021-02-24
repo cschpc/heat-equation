@@ -45,7 +45,7 @@ int main(int argc, char **argv)
         }
         /* Swap current field so that it will be used
             as previous for next iteration step */
-        current.swap(previous);
+       std::swap(current, previous);
     }
 
     auto stop_clock = MPI_Wtime();

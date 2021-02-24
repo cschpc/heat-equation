@@ -29,8 +29,6 @@ struct Field {
 
     void setup(int nx_in, int ny_in, ParallelData parallel);
 
-    void swap(Field& other);
-
     void generate(ParallelData parallel);
 
 };

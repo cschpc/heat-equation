@@ -20,11 +20,6 @@ void Field::setup(int nx_in, int ny_in, ParallelData parallel)
    temperature = std::vector<double> (field_size);
 }
 
-void Field::swap(Field& other)
-{
-    temperature.swap(other.temperature);
-}
-
 void Field::generate(ParallelData parallel) {
 
     int ind;
