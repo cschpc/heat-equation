@@ -1,9 +1,8 @@
 /* I/O related functions for heat equation solver */
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <string>
+#include <iomanip> 
+#include <fstream>
 #include <mpi.h>
 
 #include "heat.hpp"
@@ -13,7 +12,6 @@
  * distribution. */
 void write_field(Field& field, int const iter, ParallelData const parallel)
 {
-    char filename[64];
 
     auto height = field.nx * parallel.size;
     auto width = field.ny;
@@ -41,8 +39,10 @@ void write_field(Field& field, int const iter, ParallelData const parallel)
                       full_data.begin() + p * field.nx * width);
         }
         /* Write out the data to a png file */
-        std::sprintf(filename, "%s_%04d.png", "heat", iter);
-        save_png(full_data.data(), height, width, filename, 'c');
+        std::ostringstream filename_stream;
+        filename_stream << "heat_" << std::setw(4) << std::setfill('0') << iter << ".png";
+        std::string filename = filename_stream.str();
+        save_png(full_data.data(), height, width, filename.c_str(), 'c');
     } else {
         /* Send data */
         for (int i = 0; i < field.nx; i++) {
@@ -64,40 +64,37 @@ void write_field(Field& field, int const iter, ParallelData const parallel)
 void read_field(Field& field, std::string filename,
                 ParallelData const parallel)
 {
-    FILE *fp;
-    int nx, ny, ind, count;
-
-    fp = fopen(filename.c_str(), "r");
+    std::ifstream file;
+    file.open(filename);
     /* Read the header */
-    count = fscanf(fp, "# %d %d \n", &nx, &ny);
-    if (count < 2) {
-        fprintf(stderr, "Error while reading the input file!\n");
-        MPI_Abort(MPI_COMM_WORLD, -1);
-    }
-
+    std::string line, comment;
+    std::getline(file, line);
+    int nx, ny;
+    std::stringstream(line) >> comment >> nx >> ny;
 
     field.setup(nx, ny, parallel);
 
     /* Full array */
     auto full = std::vector<double> (nx * ny);
-    auto full_data = full.data();
 
     if (parallel.rank == 0) {
         /* Read the actual data */
         for (int i = 0; i < nx; i++) {
             for (int j = 0; j < ny; j++) {
-	        ind = i * ny + j;
-                count = fscanf(fp, "%lf", &full_data[ind]);
+	        auto ind = i * ny + j;
+                file >> full[ind];
             }
         }
     }
+
+    file.close();
 
     auto nx_local = field.nx;
     auto ny_local = field.ny;
 
     // Inner region (no boundaries)
     auto inner = std::vector<double> (field.nx * field.ny);
-    // auto innea_data = inner.data();
+
     MPI_Scatter(full.data(), nx_local * ny, MPI_DOUBLE, inner.data(),
                 nx_local * ny, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
@@ -105,21 +102,31 @@ void read_field(Field& field, std::string filename,
     for (int i = 0; i < nx_local; i++) {
       auto start = i * ny_local;    // beginning of row
       auto end = i * ny_local + ny; // end of row
-      auto dest = (i + 1) * (ny_local + 2) + 1; // beginnig of inner region
+      auto dest = (i + 1) * (ny_local + 2) + 1; // beginning of inner region
       std::copy(inner.begin() + start, inner.begin() + end,
                 field.temperature.begin() + dest);
     }
 
     /* Set the boundary values */
     for (int i = 1; i < nx_local + 1; i++) {
-        field.temperature[i * (ny_local + 2)] = field.temperature[i * (ny_local + 2) + 1];
-        field.temperature[i * (ny_local + 2) + ny + 1] = field.temperature[i * (ny_local + 2) + ny];
+        // left boundary
+        auto boundary = i * (ny_local + 2);
+        auto inner = boundary + 1;
+        field.temperature[boundary] = field.temperature[inner];
+        // right boundary
+        boundary = i * (ny_local + 2) + ny + 1;
+        inner = boundary - 1;
+        field.temperature[boundary] = field.temperature[inner];
     }
     for (int j = 0; j < ny + 2; j++) {
-        field.temperature[j] = field.temperature[ny_local + j];
-        field.temperature[(nx_local + 1) * (ny_local + 2) + j] = 
-          field.temperature[nx_local * (ny_local + 2) + j];
+        // top boundary
+        auto boundary = j;
+        auto inner = ny_local + 2 + j;
+        field.temperature[boundary] = field.temperature[inner];
+        // bottom boundary
+        boundary = (nx_local + 1) * (ny_local + 2) + j;
+        inner = nx_local * (ny_local + 2) + j;
+        field.temperature[boundary] = field.temperature[inner];
     }
 
-    fclose(fp);
 }
