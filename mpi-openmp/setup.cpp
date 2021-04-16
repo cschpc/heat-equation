@@ -63,14 +63,21 @@ void initialize(int argc, char *argv[], field *current,
     }
 
     if (read_file) {
+        #pragma omp single
         read_field(current, previous, input_file, parallel);
     } else {
+        #pragma omp single
+        {
         parallel_setup(parallel, rows, cols);
         set_field_dimensions(current, rows, cols, parallel);
         set_field_dimensions(previous, rows, cols, parallel);
+        }
         generate_field(current, parallel);
+        #pragma omp single
+        {
         allocate_field(previous);
         copy_field(current, previous);
+        }
     }
 }
 
@@ -79,25 +86,24 @@ void initialize(int argc, char *argv[], field *current,
  * Boundary conditions are (different) constant temperatures outside the grid */
 void generate_field(field *temperature, parallel_data *parallel)
 {
-    int ind;
     double radius;
-    int dx, dy;
 
     /* Allocate the temperature array, note that
      * we have to allocate also the ghost layers */
+    #pragma omp single
     temperature->data = new double [(temperature->nx + 2) * (temperature->ny + 2)];
 
  
     /* Radius of the source disc */
     radius = temperature->nx_full / 6.0;
-    #pragma omp for private(ind, dx, dy)
+    #pragma omp for 
     for (int i = 0; i < temperature->nx + 2; i++) {
         for (int j = 0; j < temperature->ny + 2; j++) {
-	    ind = i * (temperature->ny + 2) + j;
+	    int ind = i * (temperature->ny + 2) + j;
             /* Distance of point i, j from the origin */
-            dx = i + parallel->rank * temperature->nx -
+            int dx = i + parallel->rank * temperature->nx -
                  temperature->nx_full / 2 + 1;
-            dy = j - temperature->ny / 2 + 1;
+            int dy = j - temperature->ny / 2 + 1;
             if (dx * dx + dy * dy < radius * radius) {
                 temperature->data[ind] = 5.0;
             } else {
