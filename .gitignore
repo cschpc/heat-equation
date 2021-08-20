@@ -1,0 +1,11 @@
+*.o
+*.mod
+*.png
+*~
+heat_cuda
+heat_hip
+heat_hybrid
+heat_mpi
+heat_openacc
+heat_openmp
+heat_serial
