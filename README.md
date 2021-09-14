@@ -60,7 +60,7 @@ dimension is 2000). For GPU versions, number of MPI tasks per node has to be the
 same as number of GPUs per node. 
 
 The default initial temperature field is a disk. Initial
-temperature field can be read also from a file, the provided **bottle.dat** 
+temperature field can be read also from a file, the provided [bottle.dat](common/bottle.dat)
 illustrates what happens to a cold soda bottle in sauna.
 
 
