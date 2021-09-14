@@ -43,7 +43,7 @@ discretized with finite differences as
 
 For building and running the example one needs to have the
 [libpng](http://www.libpng.org/pub/png/libpng.html) library installed. Working MPI 
-environment is required for all cases. In addition:
+environment is required for all cases except for the serial one. In addition:
 
  * Hybrid MPI-OpenMP version requires MPI implementation with
    MPI_THREAD_MULTIPLE support
@@ -51,7 +51,7 @@ environment is required for all cases. In addition:
 
  Move to proper subfolder and modify the top of the **Makefile**
  according to your environment (proper compiler commands and compiler flags).
- Code can be build simple with **make**
+ Code can be built simply with **make**
 
 ## How to run
 
