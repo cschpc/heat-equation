@@ -11,7 +11,7 @@
 #include "pngwriter.h"
 
 // Write a picture of the temperature field
-void write_field(const Field& field, const int iter, const ParallelData parallel)
+void write_field(const Field& field, const int iter, const ParallelData& parallel)
 {
 
     auto height = field.nx * parallel.size;
@@ -58,7 +58,7 @@ void write_field(const Field& field, const int iter, const ParallelData parallel
 
 // Read the initial temperature distribution from a file
 void read_field(Field& field, std::string filename,
-                const ParallelData parallel)
+                ParallelData& parallel)
 {
     std::ifstream file;
     file.open(filename);

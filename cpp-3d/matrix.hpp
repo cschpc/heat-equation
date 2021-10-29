@@ -39,11 +39,11 @@ public:
     // Default constructor
     Matrix() = default;
     // Allocate at the time of construction
-    Matrix(int nx, int ny, int nz) : nx(nx), ny(ny), nz(nz) {
+    Matrix(int nx, int ny=1, int nz=1) : nx(nx), ny(ny), nz(nz) {
         _data.resize(nx * ny * nz);
     };
 
-    void allocate(int nx_in, int ny_in, int nz_in) {
+    void allocate(int nx_in=1, int ny_in=1, int nz_in=1) {
         nx = nx_in;
         ny = ny_in;
         nz = nz_in;
@@ -51,12 +51,12 @@ public:
     };
 
     // standard (i,j) syntax for setting elements
-    T& operator()(int i, int j, int k) {
+    T& operator()(int i=0, int j=0, int k=0) {
         return _data[ indx(i, j, k) ];
     }
 
     // standard (i,j) syntax for getting elements
-    const T& operator()(int i, int j, int k) const {
+    const T& operator()(int i=0, int j=0, int k=0) const {
         return _data[ indx(i, j, k) ];
     }
 

@@ -5,7 +5,7 @@
 
 
 void initialize(int argc, char *argv[], Field& current,
-                Field& previous, int& nsteps, ParallelData parallel)
+                Field& previous, int& nsteps, ParallelData& parallel)
 {
     /*
      * Following combinations of command line arguments are possible:
@@ -16,9 +16,9 @@ void initialize(int argc, char *argv[], Field& current,
      */
 
 
-    int height = 200;             //!< Field dimensions with default values
-    int width = 200;
-    int length = 200;
+    int height = 400;             //!< Field dimensions with default values
+    int width = 400;
+    int length = 400;
 
     std::string input_file;        //!< Name of the optional input file
 

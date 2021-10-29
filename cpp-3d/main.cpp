@@ -62,7 +62,7 @@ int main(int argc, char **argv)
         std::cout << "Average temperature: " << average_temp << std::endl;
         if (1 == argc) {
             std::cout << "Reference value with default arguments: " 
-                      << 59.281239 << std::endl;
+                      << 63.834383 << std::endl;
         }
     }
 

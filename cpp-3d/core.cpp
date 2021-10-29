@@ -5,25 +5,169 @@
 #include "heat.hpp"
 
 // Exchange the boundary values
-void exchange(Field& field, const ParallelData parallel)
+void exchange(Field& field, ParallelData& parallel)
 {
 
-    size_t buf_size = (field.ny + 2) * (field.nz + 2);
-    // Send to up, receive from down
-    auto sbuf = field.temperature.data(1, 0, 0);
-    auto rbuf  = field.temperature.data(field.nx + 1, 0, 0);
-    MPI_Sendrecv(sbuf, buf_size, MPI_DOUBLE,
-                 parallel.nup, 11,
-                 rbuf, buf_size, MPI_DOUBLE, 
-                 parallel.ndown, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    // Send to down, receive from up
+    size_t buf_size;
+    double *sbuf, *rbuf;
+#ifdef MPI_DATATYPES
+    // x-direction
+    sbuf = field.temperature.data(1, 0, 0);
+    rbuf = field.temperature.data(field.nx + 1, 0, 0);
+    MPI_Isend(sbuf, 1, parallel.halotypes[0],
+              parallel.ngbrs[0][0], 11, parallel.comm, &parallel.requests[0]);
+    MPI_Irecv(rbuf, 1, parallel.halotypes[0],
+              parallel.ngbrs[0][1], 11, parallel.comm, &parallel.requests[1]);
+    
     sbuf = field.temperature.data(field.nx, 0, 0);
-    rbuf = field.temperature.data();
-    MPI_Sendrecv(sbuf, buf_size, MPI_DOUBLE, 
-                 parallel.ndown, 12,
-                 rbuf, buf_size, MPI_DOUBLE,
-                 parallel.nup, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    rbuf = field.temperature.data(0, 0, 0);
+    MPI_Isend(sbuf, 1, parallel.halotypes[0],
+              parallel.ngbrs[0][1], 12, parallel.comm, &parallel.requests[2]);
+    MPI_Irecv(rbuf, 1, parallel.halotypes[0],
+              parallel.ngbrs[0][0], 12, parallel.comm, &parallel.requests[3]);
+    
+    // y-direction
+    sbuf = field.temperature.data(0, 1, 0);
+    rbuf = field.temperature.data(0, field.ny + 1, 0);
+    MPI_Isend(sbuf, 1, parallel.halotypes[1],
+              parallel.ngbrs[1][0], 21, parallel.comm, &parallel.requests[4]);
+    MPI_Irecv(rbuf, 1, parallel.halotypes[1],
+              parallel.ngbrs[1][1], 21, parallel.comm, &parallel.requests[5]);
+    
+    sbuf = field.temperature.data(0, field.ny, 0);
+    rbuf = field.temperature.data(0, 0, 0);
+    MPI_Isend(sbuf, 1, parallel.halotypes[1],
+              parallel.ngbrs[1][1], 22, parallel.comm, &parallel.requests[6]);
+    MPI_Irecv(rbuf, 1, parallel.halotypes[1],
+              parallel.ngbrs[1][0], 22, parallel.comm, &parallel.requests[7]);
+  
+    // z-direction
+    sbuf = field.temperature.data(0, 0, 1);
+    rbuf = field.temperature.data(0, 0, field.nz + 1);
+    MPI_Isend(sbuf, 1, parallel.halotypes[2],
+              parallel.ngbrs[2][0], 31, parallel.comm, &parallel.requests[8]);
+    MPI_Irecv(rbuf, 1, parallel.halotypes[2],
+              parallel.ngbrs[2][1], 31, parallel.comm, &parallel.requests[9]);
+    
+    sbuf = field.temperature.data(0, 0, field.nz);
+    rbuf = field.temperature.data(0, 0, 0);
+    MPI_Isend(sbuf, 1, parallel.halotypes[2],
+              parallel.ngbrs[2][1], 32, parallel.comm, &parallel.requests[10]);
+    MPI_Irecv(rbuf, 1, parallel.halotypes[2],
+              parallel.ngbrs[2][0], 32, parallel.comm, &parallel.requests[11]);
+    
+    MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
+#else
+    // x-direction
+    buf_size = (field.ny + 2) * (field.nz + 2);
+    // copy to halo
+    for (int j=0; j < field.ny + 2; j++)
+      for (int k=0; k < field.nz + 2; k++) {
+         parallel.send_buffers[0][0](j, k) = field.temperature(1, j, k);
+         parallel.send_buffers[0][1](j, k) = field.temperature(field.nx, j, k);
+      }
+
+    sbuf = parallel.send_buffers[0][0].data();
+    rbuf = parallel.recv_buffers[0][0].data();
+    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[0][0], 11, parallel.comm, &parallel.requests[0]);
+    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[0][0], 11, parallel.comm, &parallel.requests[1]);
+
+    sbuf = parallel.send_buffers[0][1].data();
+    rbuf = parallel.recv_buffers[0][1].data();
+    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[0][1], 11, parallel.comm, &parallel.requests[2]);
+    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[0][1], 11, parallel.comm, &parallel.requests[3]);
+
+
+    // y-direction
+    buf_size = (field.nx + 2) * (field.nz + 2);
+    // copy to halo
+    for (int i=0; i < field.nx + 2; i++)
+      for (int k=0; k < field.nz + 2; k++) {
+         parallel.send_buffers[1][0](i, k) = field.temperature(i, 1, k);
+         parallel.send_buffers[1][1](i, k) = field.temperature(i, field.ny, k);
+      }
+
+    sbuf = parallel.send_buffers[1][0].data();
+    rbuf = parallel.recv_buffers[1][0].data();
+    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[1][0], 11, parallel.comm, &parallel.requests[4]);
+    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[1][0], 11, parallel.comm, &parallel.requests[5]);
+
+    sbuf = parallel.send_buffers[1][1].data();
+    rbuf = parallel.recv_buffers[1][1].data();
+    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[1][1], 11, parallel.comm, &parallel.requests[6]);
+    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[1][1], 11, parallel.comm, &parallel.requests[7]);
+
+    // z-direction
+    buf_size = (field.nx + 2) * (field.ny + 2);
+    // copy to halo
+    for (int i=0; i < field.nx + 2; i++)
+      for (int j=0; j < field.ny + 2; j++) {
+         parallel.send_buffers[2][0](i, j) = field.temperature(i, j, 1);
+         parallel.send_buffers[2][1](i, j) = field.temperature(i, j, field.nz);
+      }
+
+    sbuf = parallel.send_buffers[2][0].data();
+    rbuf = parallel.recv_buffers[2][0].data();
+    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[2][0], 11, parallel.comm, &parallel.requests[8]);
+    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[2][0], 11, parallel.comm, &parallel.requests[9]);
+
+    sbuf = parallel.send_buffers[2][1].data();
+    rbuf = parallel.recv_buffers[2][1].data();
+    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[2][1], 11, parallel.comm, &parallel.requests[10]);
+    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
+              parallel.ngbrs[2][1], 11, parallel.comm, &parallel.requests[11]);
+
+    MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
+
+    // copy from halos
+    // x-direction
+    if (parallel.ngbrs[0][0] != MPI_PROC_NULL)
+      for (int j=0; j < field.ny + 2; j++)
+        for (int k=0; k < field.nz + 2; k++) {
+          field.temperature(0, j, k) = parallel.recv_buffers[0][0](j, k);
+        }  
+    if (parallel.ngbrs[0][1] != MPI_PROC_NULL)
+      for (int j=0; j < field.ny + 2; j++)
+        for (int k=0; k < field.nz + 2; k++) {
+          field.temperature(field.nx + 1, j, k) = parallel.recv_buffers[0][1](j, k);
+        }
+
+    // y-direction
+    if (parallel.ngbrs[1][0] != MPI_PROC_NULL)
+      for (int i=0; i < field.nx + 2; i++)
+        for (int k=0; k < field.nz + 2; k++) {
+          field.temperature(i, 0, k) = parallel.recv_buffers[1][0](i, k);
+      }
+    if (parallel.ngbrs[1][1] != MPI_PROC_NULL)
+      for (int i=0; i < field.nx + 2; i++)
+        for (int k=0; k < field.nz + 2; k++) {
+          field.temperature(i, field.ny + 1, k) = parallel.recv_buffers[1][1](i, k);
+        }
+
+    // z-direction
+    if (parallel.ngbrs[2][0] != MPI_PROC_NULL)
+      for (int i=0; i < field.nx + 2; i++)
+        for (int j=0; j < field.ny + 2; j++) {
+          field.temperature(i, j, 0) = parallel.recv_buffers[2][0](i, j);
+        }
+    if (parallel.ngbrs[2][1] != MPI_PROC_NULL)
+      for (int i=0; i < field.nx + 2; i++)
+        for (int j=0; j < field.ny + 2; j++) {
+          field.temperature(i, j, field.nz + 1) = parallel.recv_buffers[2][1](i, j);
+        }
+
+#endif // MPI_DATATYPES
 
 }
 
@@ -44,14 +188,9 @@ void evolve(Field& curr, const Field& prev, const double a, const double dt)
   // are not updated.
   for (int i = 1; i < curr.nx + 1; i++) {
     for (int j = 1; j < curr.ny + 1; j++) {
-#pragma omp simd
+//#pragma omp simd
       for (int k = 1; k < curr.nz + 1; k++) {
             curr(i, j, k) = prev(i, j, k) + a * dt * (
-	       //( prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j) ) * inv_dx2 +
-	       // ( prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1) ) * inv_dy2 +
-	       //  ( prev(i, j, k + 1) - 2.0 * prev(i, j, k) + prev(i, j, k - 1) ) * inv_dz2
-	       // ( prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j) ) / (prev.dx*prev.dx) +
-	       // ( prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1) ) / (prev.dy*prev.dy)
 	        ( prev(i + 1, j, k) - 2.0 * prev(i, j, k) + prev(i - 1, j, k) ) / (dx2) +
 	        ( prev(i, j + 1, k) - 2.0 * prev(i, j, k) + prev(i, j - 1, k) ) / (dy2) +
 	        ( prev(i, j, k + 1) - 2.0 * prev(i, j, k) + prev(i, j, k - 1) ) / (dz2) 

@@ -17,7 +17,7 @@ CXX=mpicxx
 CC=gcc
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp 
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp 
-CCFLAGS=-g -O2 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DMPI_DATATYPES
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
 LIBS=-lpng
@@ -32,7 +32,7 @@ LIBS=-lpng
 endif
 
 EXE=heat_mpi
-OBJS=main.o heat.o core.o parallel.o setup.o io.o utilities.o
+OBJS=main.o heat.o core.o setup.o io.o utilities.o
 OBJS_PNG=$(COMMONDIR)/pngwriter.o
 
 
@@ -42,7 +42,6 @@ all: $(EXE)
 utilities.o: utilities.cpp heat.hpp
 heat.o: heat.cpp heat.hpp matrix.hpp
 core.o: core.cpp heat.hpp
-parallel.o: parallel.cpp heat.hpp
 setup.o: setup.cpp heat.hpp
 io.o: io.cpp heat.hpp matrix.hpp
 main.o: main.cpp heat.hpp
