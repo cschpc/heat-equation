@@ -17,7 +17,7 @@ CXX=mpicxx
 CC=gcc
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp 
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp 
-CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DMPI_DATATYPES
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp  -DMPI_DATATYPES -DMPI_NEIGHBORHOOD
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
 LIBS=-lpng
