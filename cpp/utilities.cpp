@@ -7,7 +7,6 @@
 
 // Calculate average temperature
 double average(const Field& field)
-=======
 {
      double local_average = 0.0;
      double average = 0.0;
