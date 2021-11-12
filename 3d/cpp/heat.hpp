@@ -7,6 +7,7 @@
 // Class for basic parallelization information
 struct ParallelData {
     int size;            // Number of MPI tasks
+    int dims[3] = {0, 0, 0};
     int rank;
     int ngbrs[3][2];     // Ranks of neighbouring MPI tasks
 #ifdef MPI_DATATYPES
@@ -24,13 +25,9 @@ struct ParallelData {
       MPI_Comm_size(MPI_COMM_WORLD, &size);
 
       constexpr int ndims = 3;
-      int dims[ndims] = {0, 0, 0};
       int periods[ndims] = {0, 0, 0};
 
       MPI_Dims_create(size, ndims, dims);
-      //dims[0] = 1;
-      //dims[1] = 1;
-      //dims[2] = 1;
       MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, periods, 1, &comm);
       MPI_Comm_rank(comm, &rank);
 
