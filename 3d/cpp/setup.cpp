@@ -72,6 +72,8 @@ void initialize(int argc, char *argv[], Field& current,
         std::cout << "Simulation parameters: " 
                   << "height: " << height << " width: " << width << " length: " << length
                   << " time steps: " << nsteps << std::endl;
-        std::cout << "Number of MPI tasks: " << parallel.size << std::endl;
+        std::cout << "Number of MPI tasks: " << parallel.size 
+                  << " (" << parallel.dims[0] << " x " << parallel.dims[1] << " x " 
+                  << parallel.dims[2] << ")" << std::endl;
     }
 }
