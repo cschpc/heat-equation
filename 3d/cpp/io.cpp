@@ -40,7 +40,7 @@ void write_field(Field& field, const int iter, const ParallelData& parallel)
         std::ostringstream filename_stream;
         filename_stream << "heat_" << std::setw(4) << std::setfill('0') << iter << ".png";
         std::string filename = filename_stream.str();
-        save_png(full_data.data(0, 0, 0), height, width, filename.c_str(), 'c');
+        save_png(full_data.data(height / 2, 0, 0), width, length, filename.c_str(), 'c');
     } else {
         // Send data 
         MPI_Send(field.temperature.data(1, 1, 1), 1, parallel.subarraytype,
