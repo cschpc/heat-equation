@@ -19,6 +19,7 @@ struct Field {
     int ny;
     int nx_full;                // Global dimensions of the field
     int ny_full;                // Global dimensions of the field
+
     double dx = 0.01;           // Grid spacing
     double dy = 0.01;
 

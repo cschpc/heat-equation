@@ -1,5 +1,5 @@
 // Utility functions for heat equation solver
-//    NOTE: This file does not need to be edited! 
+// NOTE: This file does not need to be edited! 
 
 #include <mpi.h>
 
@@ -7,6 +7,7 @@
 
 // Calculate average temperature
 double average(const Field& field)
+=======
 {
      double local_average = 0.0;
      double average = 0.0;

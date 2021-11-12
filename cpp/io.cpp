@@ -3,7 +3,6 @@
 #include <string>
 #include <iomanip> 
 #include <fstream>
-#include <string>
 #include <mpi.h>
 
 #include "matrix.hpp"

@@ -16,7 +16,7 @@ void initialize(int argc, char *argv[], Field& current,
      */
 
 
-    int rows = 2000;             //!< Field dimensions with default values
+    int rows = 2000;               //!< Field dimensions with default values
     int cols = 2000;
 
     std::string input_file;        //!< Name of the optional input file
