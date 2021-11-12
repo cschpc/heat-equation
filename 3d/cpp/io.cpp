@@ -11,15 +11,12 @@
 #include "pngwriter.h"
 
 // Write a picture of the temperature field
-void write_field(const Field& field, const int iter, const ParallelData& parallel)
+void write_field(Field& field, const int iter, const ParallelData& parallel)
 {
 
-    auto height = field.nx * parallel.size;
-    auto width = field.ny;
-    auto length = field.nz;
-
-    // array for MPI sends and receives
-    auto tmp_mat = Matrix<double> (field.nx, field.ny, field.nz); 
+    auto height = field.nx_full;
+    auto width = field.ny_full;
+    auto length = field.nz_full;
 
     if (0 == parallel.rank) {
         // Copy the inner data
@@ -30,28 +27,24 @@ void write_field(const Field& field, const int iter, const ParallelData& paralle
                  full_data(i, j, k) = field(i + 1, j + 1, k + 1);
           
         // Receive data from other ranks
-        // TODO fix 3d
+        int coords[3];
         for (int p = 1; p < parallel.size; p++) {
-            MPI_Recv(tmp_mat.data(), field.nx * field.ny,
-                     MPI_DOUBLE, p, 22, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // Copy data to full array 
-            for (int i = 0; i < field.nx; i++) 
-                for (int j = 0; j < field.ny; j++) 
-                     full_data(i + p * field.nx, j, 0) = tmp_mat(i, j, 0);
+            MPI_Cart_coords(parallel.comm, p, 3, coords);
+            int ix = coords[0] * field.nx;
+            int iy = coords[1] * field.ny;
+            int iz = coords[2] * field.nz;
+            MPI_Recv(full_data.data(ix, iy, iz), 1, parallel.subarraytype, p, 22,
+                     parallel.comm, MPI_STATUS_IGNORE);
         }
-        // Write out the data to a png file 
+        // Write out the middle slice of data to a png file 
         std::ostringstream filename_stream;
         filename_stream << "heat_" << std::setw(4) << std::setfill('0') << iter << ".png";
         std::string filename = filename_stream.str();
-        save_png(full_data.data(), height, width, filename.c_str(), 'c');
+        save_png(full_data.data(0, 0, 0), height, width, filename.c_str(), 'c');
     } else {
         // Send data 
-        for (int i = 0; i < field.nx; i++)
-            for (int j = 0; j < field.ny; j++)
-                tmp_mat(i, j, 0) = field(i + 1, j + 1, 0);
-
-        MPI_Send(tmp_mat.data(), field.nx * field.ny,
-                 MPI_DOUBLE, 0, 22, MPI_COMM_WORLD);
+        MPI_Send(field.temperature.data(1, 1, 1), 1, parallel.subarraytype,
+                 0, 22, parallel.comm);
     }
 
 }

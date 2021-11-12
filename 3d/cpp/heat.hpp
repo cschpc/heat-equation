@@ -15,6 +15,7 @@ struct ParallelData {
     Matrix<double> send_buffers[3][2];
     Matrix<double> recv_buffers[3][2];
 #endif
+    MPI_Datatype subarraytype;
     MPI_Request requests[12];
     MPI_Comm comm;
 
@@ -77,7 +78,7 @@ void exchange(Field& field, ParallelData& parallel);
 
 void evolve(Field& curr, const Field& prev, const double a, const double dt);
 
-void write_field(const Field& field, const int iter, const ParallelData& parallel);
+void write_field(Field& field, const int iter, const ParallelData& parallel);
 
 void read_field(Field& field, std::string filename,
                 ParallelData& parallel);
