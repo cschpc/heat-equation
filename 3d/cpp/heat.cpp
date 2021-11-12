@@ -88,7 +88,7 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
         sizes[1] = ny + 2;
         sizes[2] = nz + 2;
     }
-    MPI_Type_create_subarray(2, sizes, subsizes, offsets, MPI_ORDER_C,
+    MPI_Type_create_subarray(3, sizes, subsizes, offsets, MPI_ORDER_C,
                              MPI_DOUBLE, &parallel.subarraytype);
     MPI_Type_commit(&parallel.subarraytype);
 
