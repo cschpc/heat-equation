@@ -3,12 +3,15 @@
 #include <string>
 #include <iomanip> 
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <mpi.h>
 
 #include "matrix.hpp"
 #include "heat.hpp"
+#ifndef DISABLE_PNG
 #include "pngwriter.h"
+#endif
 
 // Write a picture of the temperature field
 void write_field(Field& field, const int iter, const ParallelData& parallel)
@@ -40,7 +43,11 @@ void write_field(Field& field, const int iter, const ParallelData& parallel)
         std::ostringstream filename_stream;
         filename_stream << "heat_" << std::setw(4) << std::setfill('0') << iter << ".png";
         std::string filename = filename_stream.str();
+#ifdef DISABLE_PNG
+	std::cout << "No libpng, file not written" << std::endl;
+#else
         save_png(full_data.data(height / 2, 0, 0), width, length, filename.c_str(), 'c');
+#endif
     } else {
         // Send data 
         MPI_Send(field.temperature.data(1, 1, 1), 1, parallel.subarraytype,

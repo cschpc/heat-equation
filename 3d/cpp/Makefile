@@ -23,6 +23,18 @@ LDFLAGS=
 LIBS=-lpng
 endif
 
+ifeq ($(COMP),cray)
+CXX=CC
+CC=cc
+# CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp
+#CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp  -DMPI_DATATYPES -DMPI_NEIGHBORHOOD -DDISABLE_PNG
+# CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
+LDFLAGS=
+# LIBS=-lpng
+endif
+
+
 ifeq ($(COMP),intel)
 CXX=mpicxx
 CC=gcc
@@ -33,7 +45,7 @@ endif
 
 EXE=heat_mpi
 OBJS=main.o heat.o core.o setup.o io.o utilities.o
-OBJS_PNG=$(COMMONDIR)/pngwriter.o
+# OBJS_PNG=$(COMMONDIR)/pngwriter.o
 
 
 all: $(EXE)
