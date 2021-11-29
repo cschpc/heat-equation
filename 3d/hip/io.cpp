@@ -9,6 +9,7 @@
 
 #include "matrix.hpp"
 #include "heat.hpp"
+#include "parallel.hpp"
 #ifndef DISABLE_PNG
 #include "pngwriter.h"
 #endif

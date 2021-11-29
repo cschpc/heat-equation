@@ -1,5 +1,5 @@
 ifeq ($(COMP),)
-COMP=gnu
+COMP=cray
 endif
 
 COMMONDIR=../../common
@@ -28,7 +28,8 @@ CXX=CC
 CC=cc
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp
-CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp  -DMPI_DATATYPES -DMPI_NEIGHBORHOOD -DDISABLE_PNG
+OMPFLAGS=-fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -DMPI_DATATYPES -DMPI_NEIGHBORHOOD -DDISABLE_PNG $(OMPFLAGS)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
 # LIBS=-lpng
@@ -43,7 +44,7 @@ LDFLAGS=
 LIBS=-lpng
 endif
 
-EXE=heat_mpi
+EXE=heat_offload
 OBJS=main.o heat.o core.o setup.o io.o utilities.o
 # OBJS_PNG=$(COMMONDIR)/pngwriter.o
 
