@@ -5,8 +5,9 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#ifndef NO_MPI
 #include <mpi.h>
-
+#endif
 #include "matrix.hpp"
 #include "heat.hpp"
 #include "parallel.hpp"
@@ -30,16 +31,16 @@ void write_field(Field& field, const int iter, const ParallelData& parallel)
               for (int k = 0; k < field.nz; k++) 
                  full_data(i, j, k) = field(i + 1, j + 1, k + 1);
           
+#ifndef NO_MPI     
         // Receive data from other ranks
-        int coords[3];
         for (int p = 1; p < parallel.size; p++) {
-            MPI_Cart_coords(parallel.comm, p, 3, coords);
-            int ix = coords[0] * field.nx;
-            int iy = coords[1] * field.ny;
-            int iz = coords[2] * field.nz;
+            int ix = parallel.coords[0] * field.nx;
+            int iy = parallel.coords[1] * field.ny;
+            int iz = parallel.coords[2] * field.nz;
             MPI_Recv(full_data.data(ix, iy, iz), 1, parallel.subarraytype, p, 22,
                      parallel.comm, MPI_STATUS_IGNORE);
         }
+#endif
         // Write out the middle slice of data to a png file 
         std::ostringstream filename_stream;
         filename_stream << "heat_" << std::setw(4) << std::setfill('0') << iter << ".png";
@@ -50,9 +51,11 @@ void write_field(Field& field, const int iter, const ParallelData& parallel)
         save_png(full_data.data(height / 2, 0, 0), width, length, filename.c_str(), 'c');
 #endif
     } else {
+#ifndef NO_MPI     
         // Send data 
         MPI_Send(field.temperature.data(1, 1, 1), 1, parallel.subarraytype,
                  0, 22, parallel.comm);
+#endif
     }
 
 }
@@ -85,9 +88,10 @@ void read_field(Field& field, std::string filename,
     // Inner region (no boundaries)
     auto inner = Matrix<double> (field.nx, field.ny, field.nz);
 
+#ifndef NO_MPI
     MPI_Scatter(full.data(), field.nx * ny_full, MPI_DOUBLE, inner.data(),
                 field.nx * ny_full, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
+#endif
     // Copy to the array containing also boundaries
     for (int i = 0; i < field.nx; i++)
         for (int j = 0; j < field.ny; j++)

@@ -1,8 +1,11 @@
 // Utility functions for heat equation solver
 //    NOTE: This file does not need to be edited! 
 
+#ifdef NO_MPI
+#include <omp.h>
+#else
 #include <mpi.h>
-
+#endif
 #include "heat.hpp"
 
 // Calculate average temperature
@@ -19,7 +22,23 @@ double average(const Field& field)
        }
      }
 
+#ifdef NO_MPI
+     average = local_average;
+#else
      MPI_Allreduce(&local_average, &average, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
      average /= (field.nx_full * field.ny_full * field.nz_full);
      return average;
 }
+
+double timer() 
+{
+    double t0;
+#ifdef NO_MPI
+    t0 = omp_get_wtime();
+#else
+    t0 = MPI_Wtime();
+#endif
+    return t0;
+}
+

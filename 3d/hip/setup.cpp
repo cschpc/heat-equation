@@ -3,6 +3,7 @@
 #include <iostream>
 #include "parallel.hpp"
 #include "heat.hpp"
+#include "functions.hpp"
 
 
 void initialize(int argc, char *argv[], Field& current,

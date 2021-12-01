@@ -2,7 +2,9 @@
 #include "parallel.hpp"
 #include "matrix.hpp"
 #include <iostream>
+#ifndef NO_MPI
 #include <mpi.h>
+#endif
 
 void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel) 
 {
@@ -10,29 +12,33 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
     ny_full = ny_in;
     nz_full = nz_in;
 
-    int dims[3], periods[3], coords[3];
-    MPI_Cart_get(parallel.comm, 3, dims, periods, coords);
+#ifdef NO_MPI
+    nx = nx_full;
+    ny = ny_full;
+    nz = nz_full;
+#else
+    nx = nx_full / parallel.dims[0];
+    if (nx * parallel.dims[0] != nx_full) {
+      std::cout << "Cannot divide grid evenly to processors" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, -2);
+    }
+    ny = ny_full / parallel.dims[1];
+    if (ny * parallel.dims[1] != ny_full) {
+      std::cout << "Cannot divide grid evenly to processors" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, -2);
+    }
 
-    nx = nx_full / dims[0];
-    if (nx * dims[0] != nx_full) {
+    nz = nz_full / parallel.dims[2];
+    if (nz * parallel.dims[2] != nz_full) {
       std::cout << "Cannot divide grid evenly to processors" << std::endl;
       MPI_Abort(MPI_COMM_WORLD, -2);
     }
-    ny = ny_full / dims[1];
-    if (ny * dims[1] != ny_full) {
-      std::cout << "Cannot divide grid evenly to processors" << std::endl;
-      MPI_Abort(MPI_COMM_WORLD, -2);
-    }
-
-    nz = nz_full / dims[2];
-    if (nz * dims[2] != nz_full) {
-      std::cout << "Cannot divide grid evenly to processors" << std::endl;
-      MPI_Abort(MPI_COMM_WORLD, -2);
-    }
+#endif
 
     // matrix includes also ghost layers
     temperature = Matrix<double> (nx + 2, ny + 2, nz + 2);
 
+#ifndef NO_MPI
     // Communication buffers / datatypes
     int sizes[3];
     int offsets[3] = {0, 0, 0};
@@ -93,13 +99,11 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
                              MPI_DOUBLE, &parallel.subarraytype);
     MPI_Type_commit(&parallel.subarraytype);
 
+#endif
 
 }
 
 void Field::generate(const ParallelData& parallel) {
-
-    int dims[3], coords[3], periods[3];
-    MPI_Cart_get(parallel.comm, 3, dims, periods, coords);
 
     // Radius of the source disc 
     double radius = (nx_full + ny_full + nz_full) / 18.0;
@@ -107,9 +111,9 @@ void Field::generate(const ParallelData& parallel) {
         for (int j = 0; j < ny + 2; j++) {
             for (int k = 0; k < nz + 2; k++) {
                 // Distance of point i, j, k from the origin 
-                auto dx = i + coords[0] * nx - nx_full / 2 + 1;
-                auto dy = j + coords[1] * ny - ny_full / 2 + 1;
-                auto dz = k + coords[2] * nz - nz_full / 2 + 1;
+                auto dx = i + parallel.coords[0] * nx - nx_full / 2 + 1;
+                auto dy = j + parallel.coords[1] * ny - ny_full / 2 + 1;
+                auto dz = k + parallel.coords[2] * nz - nz_full / 2 + 1;
                 if (dx * dx + dy * dy + dz * dz < radius * radius) {
                     temperature(i, j, k) = 5.0;
                 } else {
@@ -120,39 +124,39 @@ void Field::generate(const ParallelData& parallel) {
     }
 
     // Boundary conditions
-    if (0 == coords[2])
+    if (0 == parallel.coords[2])
       for (int i = 0; i < nx + 2; i++) {
         for (int j = 0; j < ny + 2; j++) {
           temperature(i, j, 0) = 20.0;
         }
       }
-    if (coords[2] == dims[2] - 1)
+    if (parallel.coords[2] == parallel.dims[2] - 1)
       for (int i = 0; i < nx + 2; i++) {
         for (int j = 0; j < ny + 2; j++) {
           temperature(i, j, nz + 1) = 35.0;      
         }
       }
 
-    if (0 == coords[1])
+    if (0 == parallel.coords[1])
       for (int i = 0; i < nx + 2; i++) {
         for (int k = 0; k < nz + 2; k++) {
           temperature(i, 0, k) = 35.0;
         }
       }
-    if (coords[1] == dims[1] - 1)
+    if (parallel.coords[1] == parallel.dims[1] - 1)
       for (int i = 0; i < nx + 2; i++) {
         for (int k = 0; k < nz + 2; k++) {
           temperature(i, ny + 1, k) = 20.0;
       }
     }
 
-    if (0 == coords[0])
+    if (0 == parallel.coords[0])
       for (int j = 0; j < ny + 2; j++) {
         for (int k = 0; k < nz + 2; k++) {
           temperature(0, j, k) = 20.0;
         }
       }
-    if (coords[0] == dims[0] - 1)
+    if (parallel.coords[0] == parallel.dims[0] - 1)
       for (int j = 0; j < ny + 2; j++) {
         for (int k = 0; k < nz + 2; k++) {
           temperature(nx + 1, j, k) = 35.0;

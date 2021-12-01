@@ -1,6 +1,8 @@
 // Main solver routines for heat equation solver
 
+#ifndef NO_MPI
 #include <mpi.h>
+#endif
 
 #include "parallel.hpp"
 #include "heat.hpp"
@@ -8,6 +10,9 @@
 // Exchange the boundary values
 void exchange(Field& field, ParallelData& parallel)
 {
+#ifdef NO_MPI
+    return;
+#else
 
     size_t buf_size;
     double *sbuf, *rbuf;
@@ -201,6 +206,6 @@ void exchange(Field& field, ParallelData& parallel)
         }
 
 #endif // MPI_DATATYPES
-
+#endif
 }
 

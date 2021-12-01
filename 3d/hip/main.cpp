@@ -27,15 +27,19 @@ SOFTWARE.
 #include <string>
 #include <iostream>
 #include <iomanip>
+#ifndef NO_MPI
 #include <mpi.h>
-
-#include "heat.hpp"
+#endif
 #include "parallel.hpp"
+#include "heat.hpp"
+#include "functions.hpp"
 
 int main(int argc, char **argv)
 {
 
+#ifndef NO_MPI
     MPI_Init(&argc, &argv);
+#endif
 
     const int image_interval = 1500;    // Image output interval
 
@@ -62,13 +66,13 @@ int main(int argc, char **argv)
     auto dt = dx2 * dy2 * dz2 / (2.0 * a * (dx2 + dy2 + dz2));
 
     //Get the start time stamp 
-    auto start_clock = MPI_Wtime();
+    auto start_clock = timer();
 
     enter_data(current, previous);
 
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
-        // exchange(previous, parallelization);
+        exchange(previous, parallelization);
         evolve(current, previous, a, dt);
         if (iter % image_interval == 0) {
             update_host(current);
@@ -81,7 +85,7 @@ int main(int argc, char **argv)
 
     exit_data(current, previous);
 
-    auto stop_clock = MPI_Wtime();
+    auto stop_clock = timer();
 
     // Average temperature for reference 
     average_temp = average(previous);
@@ -99,7 +103,9 @@ int main(int argc, char **argv)
     // Output the final field
     write_field(previous, nsteps, parallelization);
 
+#ifndef NO_MPI
     MPI_Finalize();
+#endif
 
     return 0;
 }
