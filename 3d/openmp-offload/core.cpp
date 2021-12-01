@@ -1,12 +1,18 @@
 // Main solver routines for heat equation solver
 
+#ifndef NO_MPI
 #include <mpi.h>
+#endif
 
 #include "heat.hpp"
+#include "parallel.hpp"
 
 // Exchange the boundary values
 void exchange(Field& field, ParallelData& parallel)
 {
+#ifdef NO_MPI
+    return;
+#else    
 
     size_t buf_size;
     double *sbuf, *rbuf;
@@ -201,6 +207,7 @@ void exchange(Field& field, ParallelData& parallel)
 
 #endif // MPI_DATATYPES
 
+#endif    
 }
 
 // Update the temperature values using five-point stencil */
@@ -226,8 +233,13 @@ void evolve(Field& curr, Field& prev, const double a, const double dt)
   // Determine the temperature field at next time step
   // As we have fixed boundary conditions, the outermost gridpoints
   // are not updated.
+#ifdef DOMP_LOOP
+  #pragma omp target loop collapse(3) \
+   map(tofrom:currdata[0:field_size], prevdata[0:field_size])
+#else
   #pragma omp target teams distribute parallel for simd collapse(3) \
    map(tofrom:currdata[0:field_size], prevdata[0:field_size])
+#endif
   for (int i = 1; i < nx + 1; i++) {
     for (int j = 1; j < ny + 1; j++) {
       for (int k = 1; k < nz + 1; k++) {
