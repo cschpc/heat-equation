@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
 #endif
 
-    const int image_interval = 1500;    // Image output interval
+    const int image_interval = 15000;    // Image output interval
 
     ParallelData parallelization; // Parallelization info
 
@@ -68,12 +68,22 @@ int main(int argc, char **argv)
     //Get the start time stamp 
     auto start_clock = timer();
 
+    auto start_mem = timer();
     enter_data(current, previous);
+    auto t_mem = timer() - start_mem;
+
+    double start_mpi, start_comp;
+    double t_mpi = 0.0;
+    double t_comp = 0.0;
 
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
+        start_mpi = timer();
         exchange(previous, parallelization);
+        t_mpi += timer() - start_mpi;
+        start_comp = timer();
         evolve(current, previous, a, dt);
+        t_comp += timer() - start_comp;
         if (iter % image_interval == 0) {
             update_host(current);
             write_field(current, iter, parallelization);
@@ -83,7 +93,9 @@ int main(int argc, char **argv)
         std::swap(current, previous);
     }
 
+    start_mem = timer();
     exit_data(current, previous);
+    t_mem += timer() - start_mem;
 
     auto stop_clock = timer();
 
@@ -93,6 +105,9 @@ int main(int argc, char **argv)
     if (0 == parallelization.rank) {
         std::cout << "Iteration took " << (stop_clock - start_clock)
                   << " seconds." << std::endl;
+        std::cout << "  Memory copies " << t_mem << " s." << std::endl;
+        std::cout << "  MPI           " << t_mpi << " s." << std::endl;
+        std::cout << "  Compute       " << t_comp << " s." << std::endl;
         std::cout << "Average temperature: " << average_temp << std::endl;
         if (1 == argc) {
             std::cout << "Reference value with default arguments: " 
