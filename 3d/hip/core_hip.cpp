@@ -73,7 +73,7 @@ void enter_data(Field& curr, Field& prev)
 
     double *currdata = curr.temperature.data();
     double *prevdata = prev.temperature.data();
-    size_t field_size = (curr.nx + 2) * (curr.ny + 2) * (curr.nz + 2);
+    size_t field_size = (curr.nx + 2) * (curr.ny + 2) * (curr.nz + 2) * sizeof(double);
 
     hipMalloc(&curr.devdata, field_size);    
     hipMalloc(&prev.devdata, field_size);    
@@ -87,7 +87,7 @@ void exit_data(Field& curr, Field& prev)
 {
     double *currdata = curr.temperature.data();
     double *prevdata = prev.temperature.data();
-    size_t field_size = (curr.nx + 2) * (curr.ny + 2) * (curr.nz + 2);
+    size_t field_size = (curr.nx + 2) * (curr.ny + 2) * (curr.nz + 2) * sizeof(double);
 
     hipMemcpy(currdata, curr.devdata, field_size, hipMemcpyDeviceToHost);
     hipMemcpy(prevdata, prev.devdata, field_size, hipMemcpyDeviceToHost);
@@ -102,7 +102,7 @@ void update_host(Field& temperature)
 
     double *data = temperature.temperature.data();
     double *devdata = temperature.devdata;
-    size_t field_size = (temperature.nx + 2) * (temperature.ny + 2) * (temperature.nz + 2);
+    size_t field_size = (temperature.nx + 2) * (temperature.ny + 2) * (temperature.nz + 2) * sizeof(double);
 
     hipMemcpy(data, devdata, field_size, hipMemcpyDeviceToHost);
 }
@@ -113,7 +113,7 @@ void update_device(Field& temperature)
 
     double *data = temperature.temperature.data();
     double *devdata = temperature.devdata;
-    size_t field_size = (temperature.nx + 2) * (temperature.ny + 2) * (temperature.nz + 2);
+    size_t field_size = (temperature.nx + 2) * (temperature.ny + 2) * (temperature.nz + 2) * sizeof(double);
 
     hipMemcpy(devdata, data, field_size, hipMemcpyHostToDevice);
 }
