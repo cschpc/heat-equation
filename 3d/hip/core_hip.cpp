@@ -4,6 +4,7 @@
 #include <hip/hip_runtime.h>
 
 #include "heat.hpp"
+#include "error_checks.h"
 
 // Update the temperature values using five-point stencil 
 __global__ void evolve_kernel(double *currdata, const double *prevdata, double a, double dt, int nx,                              int ny, int nz, double inv_dx2, double inv_dy2, double inv_dz2)
@@ -18,7 +19,7 @@ __global__ void evolve_kernel(double *currdata, const double *prevdata, double a
     /* Determine the temperature field at next time step
      * As we have fixed boundary conditions, the outermost gridpoints
      * are not updated. */
-    if (i > 0 && j > 0 && i < nx+1 && j < ny+1 && k > 0 && k < nz+1) {
+    if (i > 0 && j > 0 && k > 0 && i < nx+1 && j < ny+1 && k < nz+1) {
       int ind = i * (ny + 2) * (nz + 2) + j * (nz + 2) + k;
       int ip = (i + 1) * (ny + 2) * (nz + 2) + j * (nz + 2) + k;
       int im = (i - 1) * (ny + 2) * (nz + 2) + j * (nz + 2) + k;
@@ -53,12 +54,12 @@ void evolve(Field& curr, Field& prev, const double a, const double dt)
   size_t field_size = (curr.nx + 2) * (curr.ny + 2) * (curr.nz + 2);
 
   // HIP thread settings */
-  constexpr int blocksize = 8;  //!< HIP thread block dimension
-  dim3 dimBlock(blocksize, blocksize, blocksize);
+  constexpr int blocksizes[3] = {64, 4, 4};  //!< HIP thread block dimension
+  dim3 dimBlock(blocksizes[0], blocksizes[1], blocksizes[2]);
   // HIP threads are arranged in column major order; thus make nz x ny x nx grid
-  dim3 dimGrid((nz + 2 + blocksize - 1) / blocksize,
-	       (ny + 2 + blocksize - 1) / blocksize,
-               (nx + 2 + blocksize - 1) / blocksize);
+  dim3 dimGrid((nz + 2 + blocksizes[0] - 1) / blocksizes[0],
+	       (ny + 2 + blocksizes[1] - 1) / blocksizes[1],
+               (nx + 2 + blocksizes[2] - 1) / blocksizes[2]);
 
   hipLaunchKernelGGL(evolve_kernel, dim3(dimGrid), dim3(dimBlock), 0, 0, currdata, prevdata, 
 		     a, dt, nx, ny, nz, inv_dx2, inv_dy2, inv_dz2);
