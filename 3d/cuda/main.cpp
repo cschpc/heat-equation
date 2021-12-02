@@ -27,16 +27,21 @@ SOFTWARE.
 #include <string>
 #include <iostream>
 #include <iomanip>
+#ifndef NO_MPI
 #include <mpi.h>
-
+#endif
 #include "heat.hpp"
+#include "parallel.hpp"
+#include "functions.hpp"
 
 int main(int argc, char **argv)
 {
 
+#ifndef NO_MPI
     MPI_Init(&argc, &argv);
+#endif
 
-    const int image_interval = 1500;    // Image output interval
+    const int image_interval = 15000;    // Image output interval
 
     ParallelData parallelization; // Parallelization info
 
@@ -60,21 +65,28 @@ int main(int argc, char **argv)
     // Largest stable time step 
     auto dt = dx2 * dy2 * dz2 / (2.0 * a * (dx2 + dy2 + dz2));
 
+    allocate_data(current, previous);
     //Get the start time stamp 
-    auto start_clock = MPI_Wtime();
+    auto start_clock = timer();
 
-#ifndef CUDA_MANAGED
+    auto start_mem = timer();
     enter_data(current, previous);
-#endif
+    auto t_mem = timer() - start_mem;
+
+    double start_mpi, start_comp;
+    double t_mpi = 0.0;
+    double t_comp = 0.0;
 
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
-        // exchange(previous, parallelization);
+        start_mpi = timer();
+        exchange(previous, parallelization);
+        t_mpi += timer() - start_mpi;
+        start_comp = timer();
         evolve(current, previous, a, dt);
+        t_comp += timer() - start_comp;
         if (iter % image_interval == 0) {
-#ifndef CUDA_MANAGED
             update_host(current);
-#endif
             write_field(current, iter, parallelization);
         }
         // Swap current field so that it will be used
@@ -82,10 +94,13 @@ int main(int argc, char **argv)
         std::swap(current, previous);
     }
 
-#ifndef CUDA_MANAGED
+    start_mem = timer();
     exit_data(current, previous);
-#endif
-    auto stop_clock = MPI_Wtime();
+    t_mem += timer() - start_mem;
+
+    auto stop_clock = timer();
+
+    free_data(current, previous);
 
     // Average temperature for reference 
     average_temp = average(previous);
@@ -93,6 +108,9 @@ int main(int argc, char **argv)
     if (0 == parallelization.rank) {
         std::cout << "Iteration took " << (stop_clock - start_clock)
                   << " seconds." << std::endl;
+        std::cout << "  Memory copies " << t_mem << " s." << std::endl;
+        std::cout << "  MPI           " << t_mpi << " s." << std::endl;
+        std::cout << "  Compute       " << t_comp << " s." << std::endl;
         std::cout << "Average temperature: " << average_temp << std::endl;
         if (1 == argc) {
             std::cout << "Reference value with default arguments: " 
@@ -103,7 +121,9 @@ int main(int argc, char **argv)
     // Output the final field
     write_field(previous, nsteps, parallelization);
 
+#ifndef NO_MPI
     MPI_Finalize();
+#endif
 
     return 0;
 }
