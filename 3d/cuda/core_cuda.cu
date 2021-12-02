@@ -49,13 +49,8 @@ void evolve(Field& curr, Field& prev, const double a, const double dt)
                (ny + 2 + blocksizes[1] - 1) / blocksizes[1],
                (nx + 2 + blocksizes[2] - 1) / blocksizes[2]);
 
-#ifdef CUDA_MANAGED
-  auto currdata = curr.temperature.data();
-  auto prevdata = prev.temperature.data();
-#else
-  auto currdata = curr.temperature_dev;
-  auto prevdata = prev.temperature_dev;
-#endif
+  auto currdata = curr.devdata();
+  auto prevdata = prev.devdata();
 
   evolve_kernel<<<dimGrid, dimBlock>>>(currdata, prevdata, a, dt, nx, ny, nz, 
                                          inv_dx2, inv_dy2, inv_dz2);
@@ -66,7 +61,7 @@ void evolve(Field& curr, Field& prev, const double a, const double dt)
 
 void allocate_data(Field& field1, Field& field2)
 {
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
     return;
 #else
     size_t field_size = (field1.nx + 2) * (field1.ny + 2) * (field1.nz + 2) * sizeof(double);
@@ -79,7 +74,7 @@ void enter_data(Field& field1, Field& field2)
 {
     size_t field_size = (field1.nx + 2) * (field1.ny + 2) * (field1.nz + 2) * sizeof(double);
 
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
     cudaMemPrefetchAsync(field1.devdata(), field_size, 0);
     cudaMemPrefetchAsync(field2.devdata(), field_size, 0);
 #else
@@ -90,7 +85,7 @@ void enter_data(Field& field1, Field& field2)
 
 void exit_data(Field& field1, Field& field2)
 {
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
     return;
 #else
     size_t field_size = (field1.nx + 2) * (field1.ny + 2) * (field1.nz + 2) * sizeof(double);
@@ -103,7 +98,7 @@ void exit_data(Field& field1, Field& field2)
 void free_data(Field& field1, Field& field2)
 {
 
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
     return;
 #else
     GPU_CHECK( cudaFree(field1.temperature_dev) );
@@ -114,7 +109,7 @@ void free_data(Field& field1, Field& field2)
 /* Copy a temperature field from the device to the host */
 void update_host(Field& field)
 {
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
     return;
 #else
     size_t field_size = (field.nx + 2) * (field.ny + 2) * (field.nz + 2) * sizeof(double);
@@ -125,7 +120,7 @@ void update_host(Field& field)
 /* Copy a temperature field from the host to the device */
 void update_device(Field& field)
 {
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
     return;
 #else
     size_t field_size = (field.nx + 2) * (field.ny + 2) * (field.nz + 2) * sizeof(double);

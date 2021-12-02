@@ -1,11 +1,11 @@
 #pragma once
 #include <vector>
 #include <cassert>
-// #ifdef CUDA_MANAGED
+#if defined UNIFIED_MEMORY || defined PINNED_MEMORY
 #include <cstring>
 #include <cuda_runtime.h>
 #include "error_checks.h"
-// #endif
+#endif
 #include <iostream>
 
 // Generic 3D matrix array class.
@@ -25,11 +25,10 @@ class Matrix
 private:
 
     // Internal storage
-#ifdef CUDA_MANAGED
+#if defined UNIFIED_MEMORY || defined PINNED_MEMORY
     T *_data = nullptr;
 #else    
-    // std::vector<T> _data;
-    T *_data = nullptr;
+    std::vector<T> _data;
 #endif
 
     // Internal 1D indexing
@@ -51,21 +50,23 @@ public:
     Matrix() = default;
     // Allocate at the time of construction
     Matrix(int nx, int ny=1, int nz=1) : nx(nx), ny(ny), nz(nz) {
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
         GPU_CHECK( cudaMallocManaged(&_data, nx*ny*nz*sizeof(T)) );
-#else
+#elif defined PINNED_MEMORY
         GPU_CHECK( cudaMallocHost(&_data, nx*ny*nz*sizeof(T)) );
-        // _data.resize(nx * ny * nz);
+#else
+        _data.resize(nx * ny * nz);
 #endif
     };
 
-//#ifdef CUDA_MANAGED
+// Rule of five when we manage memory ourselves
+#if defined UNIFIED_MEMORY || defined PINNED_MEMORY
     // Copy constructor
     Matrix(const Matrix& other) {
       nx = other.nx;     
       ny = other.ny;     
       nz = other.nz;
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
       GPU_CHECK( cudaMallocManaged(&_data, nx*ny*nz*sizeof(T)) );
 #else
       GPU_CHECK( cudaMallocHost(&_data, nx*ny*nz*sizeof(T)) );
@@ -73,7 +74,7 @@ public:
       std::memcpy(_data, other._data, nx*ny*nz*sizeof(T));
     }
 
-    // Assignment
+    // Copy assignment
     Matrix& operator= (const Matrix& other) {
       auto tmp = other;
       std::swap(nx, tmp.nx);
@@ -104,7 +105,7 @@ public:
 
     // Destructor
     ~Matrix() {
-#ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
        GPU_CHECK( cudaFree(_data) );
 #else
        GPU_CHECK( cudaFreeHost(_data) );
@@ -112,18 +113,19 @@ public:
          
      }
     
-//#endif
+#endif
 
     void allocate(int nx_in=1, int ny_in=1, int nz_in=1) {
         nx = nx_in;
         ny = ny_in;
         nz = nz_in;
-       #ifdef CUDA_MANAGED
+#ifdef UNIFIED_MEMORY
         GPU_CHECK( cudaMallocManaged(&_data, nx*ny*nz*sizeof(T)) );
-       #else
+#elif defined PINNED_MEMORY
         GPU_CHECK( cudaMallocHost(&_data, nx*ny*nz*sizeof(T)) );
-        // _data.resize(nx * ny * nz);
-       #endif
+#else
+        _data.resize(nx * ny * nz);
+#endif
     };
 
     // standard (i,j) syntax for setting elements
@@ -138,12 +140,11 @@ public:
 
     // provide possibility to get raw pointer for data at index (i,j,k) (needed for MPI)
     T* data(int i=0, int j=0, int k=0) {
-       #ifdef CUDA_MANAGED
+#if defined UNIFIED_MEMORY || defined PINNED_MEMORY
        return _data + i * ny * nz + j * nz + k;
-       #else
-       return _data + i * ny * nz + j * nz + k;
-       // return _data.data() + i * ny * nz + j * nz + k;
-       #endif
+#else
+       return _data.data() + i * ny * nz + j * nz + k;
+#endif
     }
 
 };

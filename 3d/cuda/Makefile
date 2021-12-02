@@ -13,13 +13,16 @@ LIBS=-lpng
 endif
 
 ifeq ($(COMP),gnu)
-CXX=mpicxx
+# CXX=mpicxx
+CXX=g++
 CC=gcc
 NVCC=nvcc
-NVCCFLAGS=-g -O3 -I$(COMMONDIR)
+GPU_MEMORY=
+# GPU_MEMORY=-DPINNED_MEMORY
+# GPU_MEMORY=-DUNIFIED_MEMORY
+NVCCFLAGS=-g -O3 -I$(COMMONDIR) $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp 
-#CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp 
-CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp  -DMPI_DATATYPES -DMPI_NEIGHBORHOOD
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) $(GPU_MEMORY) -DNDEBUG -fopenmp -DNO_MPI
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
 LIBS=-lpng -lcudart
