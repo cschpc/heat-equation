@@ -28,15 +28,17 @@ LIBS=-lpng
 endif
 
 ifeq ($(COMP),cray)
+NOPNG=true
 CXX=CC
 CC=cc
-HIPCC=/opt/rocm-4.3.1/bin/hipcc
-HIPFLAGS=-O0
+HIPCC=hipcc
+GPU_MEMORY=-DPINNED_MEMORY -I$(ROCM_PATH)/hip/include -D__HIP_PLATFORM_AMD__
+HIPFLAGS=-O3 --offload-arch=gfx908 $(GPU_MEMORY) 
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp
-CCFLAGS=-g -O0 -march=native -I$(COMMONDIR) -DNDEBUG -DMPI_DATATYPES -DMPI_NEIGHBORHOOD -DDISABLE_PNG 
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNDEBUG -DNO_MPI -DDISABLE_PNG $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
-LDFLAGS=-L/opt/rocm-4.3.1/lib -lamdhip64
+LDFLAGS=-L$(ROCM_PATH)/hip/lib -lamdhip64
 # LIBS=-lpng
 LIBS=
 endif
@@ -53,8 +55,9 @@ endif
 EXE=heat_hip
 OBJS=main.o heat.o core.o setup.o io.o utilities.o
 OBJS_HIP=core_hip.o
+ifneq ($(NOPNG),true)
 OBJS_PNG=$(COMMONDIR)/pngwriter.o
-
+endif
 
 all: $(EXE)
 
