@@ -26,3 +26,8 @@ void enter_data(Field& curr, Field& prev);
 void update_host(Field& temperature);
 
 void update_device(Field& temperature);
+
+void allocate_data(Field& field1, Field& field2);
+
+void free_data(Field& field1, Field& field2);
+

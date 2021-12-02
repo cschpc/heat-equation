@@ -30,8 +30,8 @@ SOFTWARE.
 #ifndef NO_MPI
 #include <mpi.h>
 #endif
-#include "parallel.hpp"
 #include "heat.hpp"
+#include "parallel.hpp"
 #include "functions.hpp"
 
 int main(int argc, char **argv)
@@ -65,6 +65,7 @@ int main(int argc, char **argv)
     // Largest stable time step 
     auto dt = dx2 * dy2 * dz2 / (2.0 * a * (dx2 + dy2 + dz2));
 
+    allocate_data(current, previous);
     //Get the start time stamp 
     auto start_clock = timer();
 
@@ -98,6 +99,8 @@ int main(int argc, char **argv)
     t_mem += timer() - start_mem;
 
     auto stop_clock = timer();
+
+    free_data(current, previous);
 
     // Average temperature for reference 
     average_temp = average(previous);

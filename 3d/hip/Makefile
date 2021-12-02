@@ -13,13 +13,17 @@ LIBS=-lpng
 endif
 
 ifeq ($(COMP),gnu)
-CXX=mpicxx
+CXX=g++
 CC=gcc
+HIPCC=hipcc --x cu
+# GPU_MEMORY=-DUNIFIED_MEMORY -D__HIP_PLATFORM_NVCC__ -Wno-deprecated-declarations
+# GPU_MEMORY=-DPINNED_MEMORY -D__HIP_PLATFORM_NVCC__ -Wno-deprecated-declarations
+HIPFLAGS=-O3 -DNO_MPI $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp 
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp 
-CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp  -DMPI_DATATYPES -DMPI_NEIGHBORHOOD
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNO_MPI $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
-LDFLAGS=
+LDFLAGS=-lcudart
 LIBS=-lpng
 endif
 
@@ -49,7 +53,7 @@ endif
 EXE=heat_hip
 OBJS=main.o heat.o core.o setup.o io.o utilities.o
 OBJS_HIP=core_hip.o
-# OBJS_PNG=$(COMMONDIR)/pngwriter.o
+OBJS_PNG=$(COMMONDIR)/pngwriter.o
 
 
 all: $(EXE)
