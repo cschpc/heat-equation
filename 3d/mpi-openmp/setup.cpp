@@ -68,7 +68,19 @@ void initialize(int argc, char *argv[], Field& current,
     }
 
     // copy "current" field also to "previous"
-    previous = current;
+    // previous = current;
+    // "manual" assignment in order to ensure first touch
+    previous.setup(height, width, length, parallel);
+#ifndef NO_FIRST_TOUCH
+#pragma omp parallel for collapse(2) schedule(static)
+#endif
+    for (int i = 0; i < current.nx + 2; i++) {
+        for (int j = 0; j < current.ny + 2; j++) {
+            for (int k = 0; k < current.nz + 2; k++) {
+               previous(i, j, k) = current(i, j, k);
+            }
+        }
+    }
 
     if (0 == parallel.rank) {
         std::cout << "Simulation parameters: " 
@@ -77,5 +89,6 @@ void initialize(int argc, char *argv[], Field& current,
         std::cout << "Number of MPI tasks: " << parallel.size 
                   << " (" << parallel.dims[0] << " x " << parallel.dims[1] << " x " 
                   << parallel.dims[2] << ")" << std::endl;
+        std::cout << "Number of OpenMP threads: " << parallel.num_threads << std::endl;
     }
 }

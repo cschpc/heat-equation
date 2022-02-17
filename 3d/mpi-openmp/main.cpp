@@ -38,7 +38,13 @@ int main(int argc, char **argv)
 {
 
 #ifndef NO_MPI
-    MPI_Init(&argc, &argv);
+    int provided;
+    int required = MPI_THREAD_SERIALIZED;
+    MPI_Init_thread(&argc, &argv, required, &provided);
+    if (provided < required) {
+       std::cout << "No required MPI thread safety support" << std::endl;
+       MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 #endif
 
     const int image_interval = 1500;    // Image output interval
@@ -70,24 +76,32 @@ int main(int argc, char **argv)
     double start_mpi, start_comp;
     double t_mpi = 0.0;
     double t_comp = 0.0;
-
+ #pragma omp parallel reduction(+:t_comp)
+  {
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
-        start_mpi = timer();
-        exchange(previous, parallelization);
-        t_mpi += timer() - start_mpi;
+        #pragma omp single
+        {
+         start_mpi = timer();
+         exchange(previous, parallelization);
+         t_mpi += timer() - start_mpi;
+        }
         start_comp = timer();
         evolve(current, previous, a, dt);
         t_comp += timer() - start_comp;
         if (iter % image_interval == 0) {
+            #pragma omp single
             write_field(current, iter, parallelization);
         }
         // Swap current field so that it will be used
         // as previous for next iteration step
+        #pragma omp single
         std::swap(current, previous);
     }
+  } // end omp parallel
 
     auto stop_clock = timer();
+    t_comp /= parallelization.num_threads;
 
     // Average temperature for reference 
     average_temp = average(previous);
