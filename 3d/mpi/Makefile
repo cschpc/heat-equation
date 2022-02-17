@@ -45,7 +45,7 @@ endif
 
 EXE=heat_mpi
 OBJS=main.o heat.o core.o setup.o io.o utilities.o
-# OBJS_PNG=$(COMMONDIR)/pngwriter.o
+OBJS_PNG=$(COMMONDIR)/pngwriter.o
 
 
 all: $(EXE)
