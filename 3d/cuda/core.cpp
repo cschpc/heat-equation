@@ -8,7 +8,7 @@
 #include "parallel.hpp"
 
 // Exchange the boundary values
-void exchange(Field& field, ParallelData& parallel)
+void exchange_init(Field& field, ParallelData& parallel)
 {
 
 #ifdef NO_MPI
@@ -74,7 +74,6 @@ void exchange(Field& field, ParallelData& parallel)
     MPI_Irecv(rbuf, 1, parallel.halotypes[2],
               parallel.ngbrs[2][0], 32, parallel.comm, &parallel.requests[11]);
     
-    MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
 #elif defined MPI_NEIGHBORHOOD
     MPI_Datatype types[6] = {parallel.halotypes[0], parallel.halotypes[0],
                              parallel.halotypes[1], parallel.halotypes[1],
@@ -250,6 +249,18 @@ void exchange(Field& field, ParallelData& parallel)
     MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[2][1], 11, parallel.comm, &parallel.requests[11]);
 
+#endif // MPI_DATATYPES
+#endif
+}
+
+void exchange_finalize(Field& field, ParallelData& parallel)
+{
+
+#if defined NO_MPI || defined MPI_NEIGHBORHOOD
+    return;
+#elif defined MPI_DATATYPES
+    MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
+#else
     MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
 
     // copy from halos
@@ -323,9 +334,10 @@ void exchange(Field& field, ParallelData& parallel)
          GPU_CHECK( cudaMemcpy(field.devdata(i, j, field.nz + 1), parallel.recv_buffers[2][1],
                     sizeof(double), cudaMemcpyDeviceToDevice) );
         }     
-#endif
-
-#endif // MPI_DATATYPES
+#endif // UNIFIED_MEMORY
 #endif
 }
+
+
+
 

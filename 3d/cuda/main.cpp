@@ -35,6 +35,8 @@ SOFTWARE.
 #include "parallel.hpp"
 #include "functions.hpp"
 
+#include <cuda_runtime_api.h>
+
 int main(int argc, char **argv)
 {
 
@@ -53,6 +55,11 @@ int main(int argc, char **argv)
     int nsteps;                 // Number of time steps
     Field current, previous;    // Current and previous temperature fields
     initialize(argc, argv, current, previous, nsteps, parallelization);
+
+// Create streams for computing (edge computation with three different streams)
+    cudaStream_t streams[3];
+    for (int i=0; i < 3; i++)
+      cudaStreamCreateWithFlags(&streams[i],cudaStreamNonBlocking);
 
     // Output the initial field
     write_field(current, 0, parallelization);
@@ -85,10 +92,15 @@ int main(int argc, char **argv)
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
         start_mpi = timer();
-        exchange(previous, parallelization);
+        exchange_init(previous, parallelization);
         t_mpi += timer() - start_mpi;
         start_comp = timer();
-        evolve(current, previous, a, dt);
+        evolve_interior(current, previous, a, dt, streams);
+        t_comp += timer() - start_comp;
+        start_mpi = timer();
+        exchange_finalize(previous, parallelization);
+        start_comp = timer();
+        evolve_edges(current, previous, a, dt, streams);
         t_comp += timer() - start_comp;
         if (iter % image_interval == 0) {
             update_host(current);
@@ -125,6 +137,9 @@ int main(int argc, char **argv)
 
     // Output the final field
     write_field(previous, nsteps, parallelization);
+
+    for (int i=0; i < 3; i++)
+      cudaStreamDestroy(streams[i]);
 
 #ifndef NO_MPI
     MPI_Finalize();
