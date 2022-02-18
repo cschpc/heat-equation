@@ -29,6 +29,7 @@ SOFTWARE.
 #include <iomanip>
 #ifndef NO_MPI
 #include <mpi.h>
+#include <mpi-ext.h> // Needed for CUDA-aware check
 #endif
 #include "heat.hpp"
 #include "parallel.hpp"
@@ -39,6 +40,10 @@ int main(int argc, char **argv)
 
 #ifndef NO_MPI
     MPI_Init(&argc, &argv);
+   if (1 != MPIX_Query_cuda_support()) {
+        std::cout << "CUDA aware MPI required" << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, 5);
+    }
 #endif
 
     const int image_interval = 15000;    // Image output interval
@@ -114,7 +119,7 @@ int main(int argc, char **argv)
         std::cout << "Average temperature: " << average_temp << std::endl;
         if (1 == argc) {
             std::cout << "Reference value with default arguments: " 
-                      << 63.832246 << std::endl;
+                      << 63.834223 << std::endl;
         }
     }
 

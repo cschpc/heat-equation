@@ -18,9 +18,9 @@ void initialize(int argc, char *argv[], Field& current,
      */
 
 
-    int height = 400;             //!< Field dimensions with default values
-    int width = 400;
-    int length = 400;
+    int height = 800;             //!< Field dimensions with default values
+    int width = 800;
+    int length = 800;
 
     std::string input_file;        //!< Name of the optional input file
 
@@ -77,5 +77,6 @@ void initialize(int argc, char *argv[], Field& current,
         std::cout << "Number of MPI tasks: " << parallel.size 
                   << " (" << parallel.dims[0] << " x " << parallel.dims[1] << " x " 
                   << parallel.dims[2] << ")" << std::endl;
+        std::cout << "Number of GPUs per node: " << parallel.dev_count << std::endl;
     }
 }
