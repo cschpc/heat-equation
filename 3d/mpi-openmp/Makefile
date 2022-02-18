@@ -52,11 +52,11 @@ all: $(EXE)
 
 
 utilities.o: utilities.cpp heat.hpp
-heat.o: heat.cpp heat.hpp matrix.hpp
-core.o: core.cpp heat.hpp
-setup.o: setup.cpp heat.hpp
-io.o: io.cpp heat.hpp matrix.hpp
-main.o: main.cpp heat.hpp
+heat.o: heat.cpp heat.hpp parallel.hpp matrix.hpp
+core.o: core.cpp parallel.hpp heat.hpp
+setup.o: setup.cpp parallel.hpp heat.hpp
+io.o: io.cpp heat.hpp parallel.hpp matrix.hpp
+main.o: main.cpp parallel.hpp heat.hpp
 
 $(OBJS_PNG): C_COMPILER := $(CC)
 $(OBJS): C_COMPILER := $(CXX)

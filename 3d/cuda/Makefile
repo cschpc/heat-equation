@@ -13,16 +13,16 @@ LIBS=-lpng
 endif
 
 ifeq ($(COMP),gnu)
-# CXX=mpicxx
-CXX=g++
+CXX=mpicxx
+# CXX=g++
 CC=gcc
 NVCC=nvcc
 GPU_MEMORY=
-# GPU_MEMORY=-DPINNED_MEMORY
+GPU_MEMORY=-DPINNED_MEMORY
 # GPU_MEMORY=-DUNIFIED_MEMORY
 NVCCFLAGS=-g -O3 -I$(COMMONDIR) $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp 
-CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) $(GPU_MEMORY) -DNDEBUG -fopenmp -DNO_MPI
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) $(GPU_MEMORY) -DNDEBUG -fopenmp # -DMPI_DATATYPES
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
 LIBS=-lpng -lcudart
@@ -45,12 +45,12 @@ all: $(EXE)
 
 
 utilities.o: utilities.cpp heat.hpp
-heat.o: heat.cpp heat.hpp matrix.hpp
-core.o: core.cpp heat.hpp
+heat.o: heat.cpp heat.hpp parallel.hpp matrix.hpp
+core.o: core.cpp heat.hpp parallel.hpp
 core_cuda.o: core_cuda.cu heat.hpp
-setup.o: setup.cpp heat.hpp
-io.o: io.cpp heat.hpp matrix.hpp
-main.o: main.cpp heat.hpp
+setup.o: setup.cpp heat.hpp parallel.hpp
+io.o: io.cpp heat.hpp matrix.hpp parallel.hpp
+main.o: main.cpp heat.hpp parallel.hpp
 
 $(OBJS_PNG): C_COMPILER := $(CC)
 $(OBJS): C_COMPILER := $(CXX)
