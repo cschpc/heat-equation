@@ -249,10 +249,14 @@ void evolve_interior(Field& curr, Field& prev, const double a, const double dt, 
   auto currdata = curr.devdata();
   auto prevdata = prev.devdata();
 
-  // evolve_interior_kernel<<<dimGrid, dimBlock, 0, streams[0]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
-  //                                              inv_dx2, inv_dy2, inv_dz2);
+#ifdef USE_STREAMS
+  evolve_interior_kernel<<<dimGrid, dimBlock, 0, streams[0]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
+                                               inv_dx2, inv_dy2, inv_dz2);
+#else
   evolve_interior_kernel<<<dimGrid, dimBlock>>>(currdata, prevdata, a, dt, nx, ny, nz, 
                                                 inv_dx2, inv_dy2, inv_dz2);
+#endif
+
   CHECK_ERROR_MSG("evolve_interior");
 }
 
@@ -276,26 +280,37 @@ void evolve_edges(Field& curr, Field& prev, const double a, const double dt, cud
   auto currdata = curr.devdata();
   auto prevdata = prev.devdata();
 
-  dimGrid.x = (nz + 2 + blocksizes[0] - 1) / blocksizes[0];
-  dimGrid.y = (ny + 2 + blocksizes[1] - 1) / blocksizes[1];
   dimGrid.z = 1;
-  // evolve_x_edges_kernel<<<dimGrid, dimBlock, 0, streams[0]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
-  //                                              inv_dx2, inv_dy2, inv_dz2);
-  evolve_x_edges_kernel<<<dimGrid, dimBlock>>>(currdata, prevdata, a, dt, nx, ny, nz, 
-                                                inv_dx2, inv_dy2, inv_dz2);
-  dimGrid.x = (nz + 2 + blocksizes[0] - 1) / blocksizes[0];
-  dimGrid.y = (nx + 2 + blocksizes[1] - 1) / blocksizes[1];
-  // evolve_y_edges_kernel<<<dimGrid, dimBlock, 0, streams[1]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
-  //                                                inv_dx2, inv_dy2, inv_dz2);
 
-  evolve_y_edges_kernel<<<dimGrid, dimBlock>>>(currdata, prevdata, a, dt, nx, ny, nz, 
-                                                inv_dx2, inv_dy2, inv_dz2);
   dimGrid.x = (ny + 2 + blocksizes[0] - 1) / blocksizes[0];
   dimGrid.y = (nx + 2 + blocksizes[1] - 1) / blocksizes[1];
-  // evolve_z_edges_kernel<<<dimGrid, dimBlock, 0, streams[2]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
-  //                                              inv_dx2, inv_dy2, inv_dz2);
+#ifdef USE_STREAMS
+  evolve_z_edges_kernel<<<dimGrid, dimBlock, 0, streams[2]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
+                                               inv_dx2, inv_dy2, inv_dz2);
+#else
   evolve_z_edges_kernel<<<dimGrid, dimBlock>>>(currdata, prevdata, a, dt, nx, ny, nz, 
                                                inv_dx2, inv_dy2, inv_dz2);
+#endif
+
+  dimGrid.x = (nz + 2 + blocksizes[0] - 1) / blocksizes[0];
+  dimGrid.y = (nx + 2 + blocksizes[1] - 1) / blocksizes[1];
+#ifdef USE_STREAMS
+  evolve_y_edges_kernel<<<dimGrid, dimBlock, 0, streams[1]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
+                                                 inv_dx2, inv_dy2, inv_dz2);
+#else
+  evolve_y_edges_kernel<<<dimGrid, dimBlock>>>(currdata, prevdata, a, dt, nx, ny, nz, 
+                                                inv_dx2, inv_dy2, inv_dz2);
+#endif
+
+  dimGrid.x = (nz + 2 + blocksizes[0] - 1) / blocksizes[0];
+  dimGrid.y = (ny + 2 + blocksizes[1] - 1) / blocksizes[1];
+#ifdef USE_STREAMS
+  evolve_x_edges_kernel<<<dimGrid, dimBlock, 0, streams[0]>>>(currdata, prevdata, a, dt, nx, ny, nz, 
+                                               inv_dx2, inv_dy2, inv_dz2);
+#else
+  evolve_x_edges_kernel<<<dimGrid, dimBlock>>>(currdata, prevdata, a, dt, nx, ny, nz, 
+                                                inv_dx2, inv_dy2, inv_dz2);
+#endif
   cudaDeviceSynchronize();
   CHECK_ERROR_MSG("evolve_edges");
 }
