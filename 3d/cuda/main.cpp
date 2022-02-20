@@ -91,12 +91,12 @@ int main(int argc, char **argv)
 
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
-        start_mpi = timer();
-        exchange_init(previous, parallelization);
-        t_mpi += timer() - start_mpi;
         start_comp = timer();
         evolve_interior(current, previous, a, dt, streams);
         t_comp += timer() - start_comp;
+        start_mpi = timer();
+        exchange_init(previous, parallelization);
+        t_mpi += timer() - start_mpi;
         start_mpi = timer();
         exchange_finalize(previous, parallelization);
         t_mpi += timer() - start_mpi;
