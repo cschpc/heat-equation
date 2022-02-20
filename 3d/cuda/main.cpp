@@ -99,6 +99,7 @@ int main(int argc, char **argv)
         t_comp += timer() - start_comp;
         start_mpi = timer();
         exchange_finalize(previous, parallelization);
+        t_mpi += timer() - start_mpi;
         start_comp = timer();
         evolve_edges(current, previous, a, dt, streams);
         t_comp += timer() - start_comp;
