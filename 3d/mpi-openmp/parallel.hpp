@@ -59,5 +59,17 @@ struct ParallelData {
       num_threads = tmp_threads;      
 #endif
     };
+
+#ifndef NO_MPI
+    void finalize() {  // Clean-up MPI resources
+#ifdef MPI_DATATYPES
+    MPI_Type_free(&halotypes[0]);
+    MPI_Type_free(&halotypes[1]);
+    MPI_Type_free(&halotypes[2]);
+#endif
+    MPI_Type_free(&subarraytype);
+    MPI_Comm_free(&comm);
+   }
+#endif
 };
 

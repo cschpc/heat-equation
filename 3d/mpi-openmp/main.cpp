@@ -122,6 +122,7 @@ int main(int argc, char **argv)
     write_field(previous, nsteps, parallelization);
 
 #ifndef NO_MPI
+    parallelization.finalize();
     MPI_Finalize();
 #endif
 
