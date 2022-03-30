@@ -15,7 +15,39 @@ void exchange(Field& field, ParallelData& parallel)
 #else
     size_t buf_size;
     double *sbuf, *rbuf;
-#ifdef MPI_DATATYPES
+#ifdef MPI_NEIGHBORHOOD
+    MPI_Datatype types[6] = {parallel.halotypes[0], parallel.halotypes[0],
+                             parallel.halotypes[1], parallel.halotypes[1],
+                             parallel.halotypes[2], parallel.halotypes[2]};
+    int counts[6] = {1, 1, 1, 1, 1, 1};
+    MPI_Aint sdisps[6], rdisps[6], disp0;
+
+    // Determine displacements
+    disp0 = reinterpret_cast<MPI_Aint> (field.temperature.data());
+    sdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(1, 0, 0));        
+    sdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx, 0, 0)); 
+    sdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 1, 0));        
+    sdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny, 0)); 
+    sdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 1));        
+    sdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz)); 
+
+    rdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
+    rdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx + 1, 0, 0)); 
+    rdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
+    rdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny + 1, 0)); 
+    rdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
+    rdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz + 1)); 
+
+    for (int i=0; i < 6; i++) {
+      sdisps[i] -= disp0;
+      rdisps[i] -= disp0;
+    }
+
+    MPI_Neighbor_alltoallw(field.temperature.data(), counts, sdisps, types,
+                           field.temperature.data(), counts, rdisps, types,
+                           parallel.comm);
+
+#elif defined MPI_DATATYPES
     // x-direction
     sbuf = field.temperature.data(1, 0, 0);
     rbuf = field.temperature.data(field.nx + 1, 0, 0);
@@ -62,38 +94,6 @@ void exchange(Field& field, ParallelData& parallel)
               parallel.ngbrs[2][0], 32, parallel.comm, &parallel.requests[11]);
     
     MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
-#elif defined MPI_NEIGHBORHOOD
-    MPI_Datatype types[6] = {parallel.halotypes[0], parallel.halotypes[0],
-                             parallel.halotypes[1], parallel.halotypes[1],
-                             parallel.halotypes[2], parallel.halotypes[2]};
-    int counts[6] = {1, 1, 1, 1, 1, 1};
-    MPI_Aint sdisps[6], rdisps[6], disp0;
-
-    // Determine displacements
-    disp0 = reinterpret_cast<MPI_Aint> (field.temperature.data());
-    sdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(1, 0, 0));        
-    sdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx, 0, 0)); 
-    sdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 1, 0));        
-    sdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny, 0)); 
-    sdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 1));        
-    sdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz)); 
-
-    rdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
-    rdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx + 1, 0, 0)); 
-    rdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
-    rdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny + 1, 0)); 
-    rdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
-    rdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz + 1)); 
-
-    for (int i=0; i < 6; i++) {
-      sdisps[i] -= disp0;
-      rdisps[i] -= disp0;
-    }
-
-    MPI_Neighbor_alltoallw(field.temperature.data(), counts, sdisps, types,
-                           field.temperature.data(), counts, rdisps, types,
-                           parallel.comm);
-
 #else
     // x-direction
     buf_size = (field.ny + 2) * (field.nz + 2);
