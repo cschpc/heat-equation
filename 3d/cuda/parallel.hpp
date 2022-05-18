@@ -3,6 +3,7 @@
 #include <mpi.h>
 #endif
 #include "matrix.hpp"
+#include <cuda_runtime.h>
 
 // Class for basic parallelization information
 struct ParallelData {
@@ -13,16 +14,11 @@ struct ParallelData {
     int dev_count;
     int ngbrs[3][2];     // Ranks of neighbouring MPI tasks
 #ifndef NO_MPI
-#ifdef MPI_DATATYPES
+#if defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD
     MPI_Datatype halotypes[3];
 #else
- #ifdef UNIFIED_MEMORY
-    Matrix<double> send_buffers[3][2];
-    Matrix<double> recv_buffers[3][2];
- #else
     double* send_buffers[3][2];
     double* recv_buffers[3][2];
- #endif
 #endif
     MPI_Datatype subarraytype;
     MPI_Request requests[12];

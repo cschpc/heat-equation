@@ -6,18 +6,15 @@
 
 #include "heat.hpp"
 #include "parallel.hpp"
+#include <cuda_runtime.h>
+#include "error_checks.h"
 
 // Exchange the boundary values
-void exchange_init(Field& field, ParallelData& parallel)
-{
-
-#ifdef NO_MPI
-    return;
-#else
-
-    size_t buf_size;
-    double *sbuf, *rbuf;
 #ifdef MPI_DATATYPES
+void exchange_init_datatypes(Field& field, ParallelData& parallel)
+{
+    double *sbuf, *rbuf;
+
     // x-direction
     sbuf = field.devdata(1, 0, 0);
     rbuf = field.devdata(field.nx + 1, 0, 0);
@@ -26,12 +23,7 @@ void exchange_init(Field& field, ParallelData& parallel)
               parallel.ngbrs[0][0], 11, parallel.comm, &parallel.requests[0]);
     MPI_Irecv(rbuf, 1, parallel.halotypes[0],
               parallel.ngbrs[0][1], 11, parallel.comm, &parallel.requests[1]);
-/* 
-    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
-              parallel.ngbrs[0][0], 11, parallel.comm, &parallel.requests[0]);
-    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
-              parallel.ngbrs[0][1], 11, parallel.comm, &parallel.requests[1]);
-*/   
+
     sbuf = field.devdata(field.nx, 0, 0);
     rbuf = field.devdata(0, 0, 0);
     MPI_Isend(sbuf, 1, parallel.halotypes[0],
@@ -39,11 +31,6 @@ void exchange_init(Field& field, ParallelData& parallel)
     MPI_Irecv(rbuf, 1, parallel.halotypes[0],
               parallel.ngbrs[0][0], 12, parallel.comm, &parallel.requests[3]);
     
-/*    MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
-              parallel.ngbrs[0][1], 12, parallel.comm, &parallel.requests[2]);
-    MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
-              parallel.ngbrs[0][0], 12, parallel.comm, &parallel.requests[3]);
-*/
     // y-direction
     sbuf = field.devdata(0, 1, 0);
     rbuf = field.devdata(0, field.ny + 1, 0);
@@ -73,8 +60,11 @@ void exchange_init(Field& field, ParallelData& parallel)
               parallel.ngbrs[2][1], 32, parallel.comm, &parallel.requests[10]);
     MPI_Irecv(rbuf, 1, parallel.halotypes[2],
               parallel.ngbrs[2][0], 32, parallel.comm, &parallel.requests[11]);
-    
-#elif defined MPI_NEIGHBORHOOD
+}
+#endif
+
+#ifdef MPI_NEIGHBORHOOD
+void exchange_init_neighborhood(Field& field, ParallelData& parallel)
     MPI_Datatype types[6] = {parallel.halotypes[0], parallel.halotypes[0],
                              parallel.halotypes[1], parallel.halotypes[1],
                              parallel.halotypes[2], parallel.halotypes[2]};
@@ -105,35 +95,18 @@ void exchange_init(Field& field, ParallelData& parallel)
     MPI_Neighbor_alltoallw(field.devdata(), counts, sdisps, types,
                            field.devdata(), counts, rdisps, types,
                            parallel.comm);
+}
+#endif
 
-#else
+#if !(defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD)
+// Communicate with manual packing to/from send/receive buffers
+void exchange_init_packing(Field& field, ParallelData& parallel)
+{
+    size_t buf_size;
+    double *sbuf, *rbuf;
+
     // x-direction
     buf_size = (field.ny + 2) * (field.nz + 2);
-/*    // copy to halo
- #ifdef UNIFIED_MEMORY
-    for (int j=0; j < field.ny + 2; j++)
-      for (int k=0; k < field.nz + 2; k++) {
-         parallel.send_buffers[0][0](j, k) = field.temperature(1, j, k);
-         parallel.send_buffers[0][1](j, k) = field.temperature(field.nx, j, k);
-      }
-
-    sbuf = parallel.send_buffers[0][0].data();
-    rbuf = parallel.recv_buffers[0][0].data();
- #else
-    if (parallel.ngbrs[0][0] != MPI_PROC_NULL) {
-      GPU_CHECK( cudaMemcpy(parallel.send_buffers[0][0], field.devdata(1, 0, 0), 
-                 buf_size *  sizeof(double), cudaMemcpyDeviceToDevice) ); 
-    }
-    if (parallel.ngbrs[0][1] != MPI_PROC_NULL) {
-      GPU_CHECK( cudaMemcpy(parallel.send_buffers[0][1], field.devdata(field.nx, 0, 0), 
-                 buf_size *  sizeof(double), cudaMemcpyDeviceToDevice) );
-    }
-
-
-    sbuf = parallel.send_buffers[0][0];
-    rbuf = parallel.recv_buffers[0][0];
- #endif
-*/
     // In x-direction buffer is contiguous, so no memory copies are needed
 
     sbuf = field.devdata(1, 0, 0);
@@ -156,16 +129,6 @@ void exchange_init(Field& field, ParallelData& parallel)
     // y-direction
     buf_size = (field.nx + 2) * (field.nz + 2);
     // copy to halo
- #ifdef UNIFIED_MEMORY
-    for (int i=0; i < field.nx + 2; i++)
-      for (int k=0; k < field.nz + 2; k++) {
-         parallel.send_buffers[1][0](i, k) = field.temperature(i, 1, k);
-         parallel.send_buffers[1][1](i, k) = field.temperature(i, field.ny, k);
-      }
-
-    sbuf = parallel.send_buffers[1][0].data();
-    rbuf = parallel.recv_buffers[1][0].data();
- #else
     if (parallel.ngbrs[1][0] != MPI_PROC_NULL) {
       for (int i=0; i < field.nx + 2; i++) {
           GPU_CHECK( cudaMemcpy(parallel.send_buffers[1][0] + i * (field.nz + 2), field.devdata(1, 1, 0), (field.nz + 2) *  sizeof(double), cudaMemcpyDeviceToDevice) );
@@ -174,25 +137,20 @@ void exchange_init(Field& field, ParallelData& parallel)
 
     sbuf = parallel.send_buffers[0][0];
     rbuf = parallel.recv_buffers[0][0];
- #endif
 
     MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[1][0], 11, parallel.comm, &parallel.requests[4]);
     MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[1][0], 11, parallel.comm, &parallel.requests[5]);
 
- #ifdef UNIFIED_MEMORY
-    sbuf = parallel.send_buffers[1][1].data();
-    rbuf = parallel.recv_buffers[1][1].data();
- #else
     if (parallel.ngbrs[1][1] != MPI_PROC_NULL) {
       for (int i=0; i < field.nx + 2; i++) {
         GPU_CHECK( cudaMemcpy(parallel.send_buffers[1][1] + i * (field.nz + 2), field.devdata(1, field.ny, 0), (field.nz + 2) *  sizeof(double), cudaMemcpyDeviceToDevice) );
       }
     }
+
     sbuf = parallel.send_buffers[1][1];
     rbuf = parallel.recv_buffers[1][1];
- #endif
 
     MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[1][1], 11, parallel.comm, &parallel.requests[6]);
@@ -202,16 +160,6 @@ void exchange_init(Field& field, ParallelData& parallel)
     // z-direction
     buf_size = (field.nx + 2) * (field.ny + 2);
     // copy to halo
- #ifdef UNIFIED_MEMORY
-    for (int i=0; i < field.nx + 2; i++)
-      for (int j=0; j < field.ny + 2; j++) {
-         parallel.send_buffers[2][0](i, j) = field.temperature(i, j, 1);
-         parallel.send_buffers[2][1](i, j) = field.temperature(i, j, field.nz);
-      }
-
-    sbuf = parallel.send_buffers[2][0].data();
-    rbuf = parallel.recv_buffers[2][0].data();
- #else
     if (parallel.ngbrs[2][0] != MPI_PROC_NULL) {
       for (int i=0; i < field.nx + 2; i++) 
         for (int j=0; j < field.ny + 2; j++) {
@@ -222,17 +170,12 @@ void exchange_init(Field& field, ParallelData& parallel)
 
     sbuf = parallel.send_buffers[2][0];
     rbuf = parallel.recv_buffers[2][0];
- #endif
 
     MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[2][0], 11, parallel.comm, &parallel.requests[8]);
     MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[2][0], 11, parallel.comm, &parallel.requests[9]);
 
- #ifdef UNIFIED_MEMORY
-    sbuf = parallel.send_buffers[2][1].data();
-    rbuf = parallel.recv_buffers[2][1].data();
- #else
     if (parallel.ngbrs[2][1] != MPI_PROC_NULL) {
       for (int i=0; i < field.nx + 2; i++) 
         for (int j=0; j < field.ny + 2; j++) {
@@ -240,18 +183,30 @@ void exchange_init(Field& field, ParallelData& parallel)
                     sizeof(double), cudaMemcpyDeviceToDevice) );
       }
     }
+
     sbuf = parallel.send_buffers[2][1];
     rbuf = parallel.recv_buffers[2][1];
- #endif
 
     MPI_Isend(sbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[2][1], 11, parallel.comm, &parallel.requests[10]);
     MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[2][1], 11, parallel.comm, &parallel.requests[11]);
+}
+#endif
 
-#endif // MPI_DATATYPES
+void exchange_init(Field& field, ParallelData& parallel)
+{
+#ifdef NO_MPI
+    return;
+#elif defined MPI_DATATYPES
+    exchange_init_datatypes(field, parallel);
+#elif defined MPI_NEIGHBORHOOD
+    exchange_init_neighborhood(field, parallel);
+#else
+    exchange_init_packing(field, parallel);
 #endif
 }
+
 
 void exchange_finalize(Field& field, ParallelData& parallel)
 {
@@ -264,53 +219,9 @@ void exchange_finalize(Field& field, ParallelData& parallel)
     MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
 
     // copy from halos
-#ifdef UNIFIED_MEMORY
     // x-direction
-/*    if (parallel.ngbrs[0][0] != MPI_PROC_NULL)
-      for (int j=0; j < field.ny + 2; j++)
-        for (int k=0; k < field.nz + 2; k++) {
-          field.temperature(0, j, k) = parallel.recv_buffers[0][0](j, k);
-        }  
-    if (parallel.ngbrs[0][1] != MPI_PROC_NULL)
-      for (int j=0; j < field.ny + 2; j++)
-        for (int k=0; k < field.nz + 2; k++) {
-          field.temperature(field.nx + 1, j, k) = parallel.recv_buffers[0][1](j, k);
-        }
-*/
-    // y-direction
-    if (parallel.ngbrs[1][0] != MPI_PROC_NULL)
-      for (int i=0; i < field.nx + 2; i++)
-        for (int k=0; k < field.nz + 2; k++) {
-          field.temperature(i, 0, k) = parallel.recv_buffers[1][0](i, k);
-      }
-    if (parallel.ngbrs[1][1] != MPI_PROC_NULL)
-      for (int i=0; i < field.nx + 2; i++)
-        for (int k=0; k < field.nz + 2; k++) {
-          field.temperature(i, field.ny + 1, k) = parallel.recv_buffers[1][1](i, k);
-        }
-
-    // z-direction
-    if (parallel.ngbrs[2][0] != MPI_PROC_NULL)
-      for (int i=0; i < field.nx + 2; i++)
-        for (int j=0; j < field.ny + 2; j++) {
-          field.temperature(i, j, 0) = parallel.recv_buffers[2][0](i, j);
-        }
-    if (parallel.ngbrs[2][1] != MPI_PROC_NULL)
-      for (int i=0; i < field.nx + 2; i++)
-        for (int j=0; j < field.ny + 2; j++) {
-          field.temperature(i, j, field.nz + 1) = parallel.recv_buffers[2][1](i, j);
-        }
-#else
-    // x-direction
-/*    if (parallel.ngbrs[0][0] != MPI_PROC_NULL) {
-      GPU_CHECK( cudaMemcpy(field.devdata(0, 0, 0), parallel.recv_buffers[0][0],
-                 (field.ny + 2) * (field.nz + 2) * sizeof(double), cudaMemcpyDeviceToDevice) );
-    }
-    if (parallel.ngbrs[0][1] != MPI_PROC_NULL) {
-      GPU_CHECK( cudaMemcpy(field.devdata(field.nx + 1, 0, 0), parallel.recv_buffers[0][1],
-                 (field.ny + 2) * (field.nz + 2) * sizeof(double), cudaMemcpyDeviceToDevice) );
-    }
-*/
+    // In x-direction buffer is contiguous, so no memory copies are needed
+    
     // y-direction
     if (parallel.ngbrs[1][0] != MPI_PROC_NULL)
       for (int i=0; i < field.nx + 2; i++)
@@ -334,7 +245,6 @@ void exchange_finalize(Field& field, ParallelData& parallel)
          GPU_CHECK( cudaMemcpy(field.devdata(i, j, field.nz + 1), parallel.recv_buffers[2][1],
                     sizeof(double), cudaMemcpyDeviceToDevice) );
         }     
-#endif // UNIFIED_MEMORY
 #endif
 }
 
