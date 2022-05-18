@@ -7,15 +7,12 @@
 #include "parallel.hpp"
 #include "heat.hpp"
 
-// Exchange the boundary values
-void exchange(Field& field, ParallelData& parallel)
+#ifdef MPI_DATATYPES
+// Isend / Irecv with user defined datatypes
+void exchange_datatypes(Field& field, ParallelData& parallel)
 {
-#ifdef NO_MPI
-    return;
-#else
     size_t buf_size;
     double *sbuf, *rbuf;
-#ifdef MPI_DATATYPES
     // x-direction
     sbuf = field.temperature.data(1, 0, 0);
     rbuf = field.temperature.data(field.nx + 1, 0, 0);
@@ -62,7 +59,13 @@ void exchange(Field& field, ParallelData& parallel)
               parallel.ngbrs[2][0], 32, parallel.comm, &parallel.requests[11]);
     
     MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
-#elif defined MPI_NEIGHBORHOOD
+}
+#endif
+
+#ifdef MPI_NEIGHBORHOOD
+// Communication with neighborhood collective
+void exchange_neighborhood(Field& field, ParallelData& parallel)
+{
     MPI_Datatype types[6] = {parallel.halotypes[0], parallel.halotypes[0],
                              parallel.halotypes[1], parallel.halotypes[1],
                              parallel.halotypes[2], parallel.halotypes[2]};
@@ -93,8 +96,15 @@ void exchange(Field& field, ParallelData& parallel)
     MPI_Neighbor_alltoallw(field.temperature.data(), counts, sdisps, types,
                            field.temperature.data(), counts, rdisps, types,
                            parallel.comm);
+}
+#endif
 
-#else
+#if !(defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD)
+// Communicate with manual packing to/from send/receive buffers
+void exchange_packing(Field& field, ParallelData& parallel)
+{
+    size_t buf_size;
+    double *sbuf, *rbuf;
     // x-direction
     buf_size = (field.ny + 2) * (field.nz + 2);
     // copy to halo
@@ -203,10 +213,23 @@ void exchange(Field& field, ParallelData& parallel)
         for (int j=0; j < field.ny + 2; j++) {
           field.temperature(i, j, field.nz + 1) = parallel.recv_buffers[2][1](i, j);
         }
+}
+#endif
 
-#endif // MPI_DATATYPES
+// Exchange the boundary values
+void exchange(Field& field, ParallelData& parallel)
+{
+#ifdef NO_MPI
+    return;
+#elif defined MPI_DATATYPES
+    exchange_datatypes(field, parallel);
+#elif defined MPI_NEIGHBORHOOD
+    exchange_neighborhood(field, parallel);
+#else
+    exchange_packing(field, parallel);
 #endif
 }
+    
 
 // Update the temperature values using five-point stencil */
 void evolve(Field& curr, const Field& prev, const double a, const double dt)

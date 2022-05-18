@@ -43,7 +43,7 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
     int sizes[3];
     int offsets[3] = {0, 0, 0};
     int subsizes[3];
-#ifdef MPI_DATATYPES
+#if defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD
     sizes[0] = nx + 2;
     sizes[1] = ny + 2;
     sizes[2] = nz + 2;

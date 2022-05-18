@@ -12,7 +12,7 @@ struct ParallelData {
     int rank;
     int ngbrs[3][2];     // Ranks of neighbouring MPI tasks
 #ifndef NO_MPI
-#ifdef MPI_DATATYPES
+#if defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD
     MPI_Datatype halotypes[3];
 #else
     Matrix<double> send_buffers[3][2];
@@ -46,5 +46,16 @@ struct ParallelData {
 
 #endif
     };
+
+    void finalize() { // Clean-up MPI resources
+#if defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD
+      for (int i=0; i < 3; i++)
+         MPI_Type_free(&halotypes[i]);
+#endif
+      MPI_Type_free(&subarraytype);
+      MPI_Comm_free(&comm);
+    }
+
+
 };
 
