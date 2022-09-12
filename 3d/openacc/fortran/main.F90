@@ -57,10 +57,9 @@ program heat_solve
         call write_field(current, iter, parallelization)
      end if
      call swap_fields(current, previous)
-     ! call update_host(previous)
   end do
 
-  call update_host(previous)
+  call exit_data(current, previous)
   stop_time = mpi_wtime()
 
   ! Average temperature for reference
@@ -70,7 +69,7 @@ program heat_solve
      write(*,'(A,F7.3,A)') 'Iteration took ', stop_time - start_time, ' seconds.'
      write(*,'(A,F9.6)') 'Average temperature: ',  average_temp
      if (command_argument_count() == 0) then
-         write(*,'(A,F9.6)') 'Reference value with default arguments: ', 63.834223
+         write(*,'(A,F9.6)') 'Reference value with default arguments: ', 63.834223_dp
      end if
   end if
 
