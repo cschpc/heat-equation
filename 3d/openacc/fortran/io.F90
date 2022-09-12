@@ -11,7 +11,9 @@ contains
   !   iter (integer): index of the time step
   subroutine write_field(curr, iter, parallel)
 
+#ifndef DISABLE_PNG
     use pngwriter
+#endif
     implicit none
     type(field), intent(in) :: curr
     integer, intent(in) :: iter
@@ -36,7 +38,13 @@ contains
                & MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
        end do
        write(filename,'(A5,I4.4,A4,A)')  'heat_', iter, '.png'
+#ifdef DISABLE_PNG
+       if (parallel%rank == 0) then
+           write(*,*) "No libpng, file not written"
+       end if
+#else
        stat = save_png(full_data(:, :, curr%nz_full / 2), curr%nx_full, curr%ny_full, filename)
+#endif
        deallocate(full_data)
     else
        ! Send data
