@@ -6,7 +6,9 @@
 void initialize(int argc, char *argv[], Field& current,
                 Field& previous, int& nsteps, ParallelData& parallel);
 
-void exchange(Field& field, ParallelData& parallel);
+void exchange_init(Field& field, ParallelData& parallel);
+
+void exchange_finalize(Field& field, ParallelData& parallel);
 
 void evolve(Field& curr, Field& prev, const double a, const double dt);
 

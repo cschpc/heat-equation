@@ -79,7 +79,8 @@ int main(int argc, char **argv)
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
         start_mpi = timer();
-        exchange(previous, parallelization);
+        exchange_init(previous, parallelization);
+	exchange_finalize(previous, parallelization);
         t_mpi += timer() - start_mpi;
         start_comp = timer();
         evolve(current, previous, a, dt);

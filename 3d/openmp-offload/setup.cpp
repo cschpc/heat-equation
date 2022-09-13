@@ -18,9 +18,9 @@ void initialize(int argc, char *argv[], Field& current,
      */
 
 
-    int height = 400;             //!< Field dimensions with default values
-    int width = 400;
-    int length = 400;
+    int height = 800;             //!< Field dimensions with default values
+    int width = 800;
+    int length = 800;
 
     std::string input_file;        //!< Name of the optional input file
 

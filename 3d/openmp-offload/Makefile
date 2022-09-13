@@ -28,10 +28,11 @@ CXX=CC
 CC=cc
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp
-OMPFLAGS=-fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
-CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -DMPI_DATATYPES -DMPI_NEIGHBORHOOD -DDISABLE_PNG $(OMPFLAGS)
+#OMPFLAGS=-fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
+OMPFLAGS=-fopenmp
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -DDISABLE_PNG $(OMPFLAGS)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
-LDFLAGS=
+LDFLAGS=--rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64
 # LIBS=-lpng
 endif
 

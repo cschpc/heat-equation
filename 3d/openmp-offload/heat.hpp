@@ -30,5 +30,13 @@ struct Field {
     // standard (i,j) syntax for getting elements
     const double& operator()(int i, int j, int k) const {return temperature(i, j, k);}
 
+    double* devdata(int i=0, int j=0, int k=0) {
+       double *tmp_ptr = temperature.data(i, j, k);
+       double *dev_ptr;
+       #pragma omp target data use_device_ptr(tmp_ptr)
+       dev_ptr = tmp_ptr;
+
+       return dev_ptr;
+    }
 };
 
