@@ -5,6 +5,8 @@
 #ifndef NO_MPI
 #include <mpi.h>
 #endif
+#include <hip/hip_runtime.h>
+#include "error_checks.h"
 
 void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel) 
 {
@@ -50,8 +52,10 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
     subsizes[0] = 1;
     subsizes[1] = ny + 2;
     subsizes[2] = nz + 2;
-    MPI_Type_create_subarray(3, sizes, subsizes, offsets, MPI_ORDER_C,
-                             MPI_DOUBLE, &parallel.halotypes[0]);
+/*    MPI_Type_create_subarray(3, sizes, subsizes, offsets, MPI_ORDER_C,
+                             MPI_DOUBLE, &parallel.halotypes[0]);*/
+    // Use contiguous in x
+    MPI_Type_contiguous((ny + 2) * (nz + 2), MPI_DOUBLE, &parallel.halotypes[0]);
     MPI_Type_commit(&parallel.halotypes[0]);
     subsizes[0] = nx + 2;
     subsizes[1] = 1;
@@ -66,18 +70,18 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
                              MPI_DOUBLE, &parallel.halotypes[2]);
     MPI_Type_commit(&parallel.halotypes[2]);
 #else
-    parallel.send_buffers[0][0] = Matrix<double> (ny + 2, nz + 2);
-    parallel.send_buffers[0][1] = Matrix<double> (ny + 2, nz + 2);
-    parallel.send_buffers[1][0] = Matrix<double> (nx + 2, nz + 2);
-    parallel.send_buffers[1][1] = Matrix<double> (nx + 2, nz + 2);
-    parallel.send_buffers[2][0] = Matrix<double> (nx + 2, ny + 2);
-    parallel.send_buffers[2][1] = Matrix<double> (nx + 2, ny + 2);
-    parallel.recv_buffers[0][0] = Matrix<double> (ny + 2, nz + 2);
-    parallel.recv_buffers[0][1] = Matrix<double> (ny + 2, nz + 2);
-    parallel.recv_buffers[1][0] = Matrix<double> (nx + 2, nz + 2);
-    parallel.recv_buffers[1][1] = Matrix<double> (nx + 2, nz + 2);
-    parallel.recv_buffers[2][0] = Matrix<double> (nx + 2, ny + 2);
-    parallel.recv_buffers[2][1] = Matrix<double> (nx + 2, ny + 2);
+    GPU_CHECK( hipMalloc(&parallel.send_buffers[0][0], (ny + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.send_buffers[0][1], (ny + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.send_buffers[1][0], (nx + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.send_buffers[1][1], (nx + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.send_buffers[2][0], (nx + 2) * (ny + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.send_buffers[2][1], (nx + 2) * (ny + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.recv_buffers[0][0], (ny + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.recv_buffers[0][1], (ny + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.recv_buffers[1][0], (nx + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.recv_buffers[1][1], (nx + 2) * (nz + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.recv_buffers[2][0], (nx + 2) * (ny + 2) * sizeof(double)) );
+    GPU_CHECK( hipMalloc(&parallel.recv_buffers[2][1], (nx + 2) * (ny + 2) * sizeof(double)) );
 #endif
 
     // MPI datatype for subblock needed in I/O

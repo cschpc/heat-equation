@@ -29,16 +29,27 @@ SOFTWARE.
 #include <iomanip>
 #ifndef NO_MPI
 #include <mpi.h>
+#ifdef CHECK_GPU_MPI
+#include <mpi-ext.h> // Needed for CUDA-aware check
+#endif
 #endif
 #include "heat.hpp"
 #include "parallel.hpp"
 #include "functions.hpp"
+
+#include <hip/hip_runtime_api.h>
 
 int main(int argc, char **argv)
 {
 
 #ifndef NO_MPI
     MPI_Init(&argc, &argv);
+#ifdef CHECK_GPU_MPI
+    if (1 != MPIX_Query_cuda_support()) {
+        std::cout << "CUDA aware MPI required" << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, 5);
+    }
+#endif
 #endif
 
     const int image_interval = 15000;    // Image output interval
@@ -48,6 +59,11 @@ int main(int argc, char **argv)
     int nsteps;                 // Number of time steps
     Field current, previous;    // Current and previous temperature fields
     initialize(argc, argv, current, previous, nsteps, parallelization);
+
+// Create streams for computing (edge computation with three different streams)
+    hipStream_t streams[3];
+    for (int i=0; i < 3; i++)
+      hipStreamCreateWithFlags(&streams[i],hipStreamNonBlocking);
 
     // Output the initial field
     write_field(current, 0, parallelization);
@@ -79,11 +95,17 @@ int main(int argc, char **argv)
 
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
+        start_comp = timer();
+        evolve_interior(current, previous, a, dt, streams);
+        t_comp += timer() - start_comp;
         start_mpi = timer();
-        exchange(previous, parallelization);
+        exchange_init(previous, parallelization);
+        t_mpi += timer() - start_mpi;
+        start_mpi = timer();
+        exchange_finalize(previous, parallelization);
         t_mpi += timer() - start_mpi;
         start_comp = timer();
-        evolve(current, previous, a, dt);
+        evolve_edges(current, previous, a, dt, streams);
         t_comp += timer() - start_comp;
         if (iter % image_interval == 0) {
             update_host(current);
@@ -114,12 +136,15 @@ int main(int argc, char **argv)
         std::cout << "Average temperature: " << average_temp << std::endl;
         if (1 == argc) {
             std::cout << "Reference value with default arguments: " 
-                      << 63.832246 << std::endl;
+                      << 63.834223 << std::endl;
         }
     }
 
     // Output the final field
     write_field(previous, nsteps, parallelization);
+
+    for (int i=0; i < 3; i++)
+      hipStreamDestroy(streams[i]);
 
 #ifndef NO_MPI
     MPI_Finalize();

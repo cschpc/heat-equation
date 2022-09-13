@@ -31,14 +31,14 @@ ifeq ($(COMP),cray)
 NOPNG=true
 CXX=CC
 CC=cc
-HIPCC=hipcc
-GPU_MEMORY=-DPINNED_MEMORY -I$(ROCM_PATH)/hip/include -D__HIP_PLATFORM_AMD__
-HIPFLAGS=-O3 --offload-arch=gfx908 $(GPU_MEMORY) 
+HIPCC=CC
+GPU_MEMORY=-DPINNED_MEMORY -D__HIP_PLATFORM_AMD__
+HIPFLAGS=$(GPU_MEMORY) -O3 -std=c++11 --rocm-path=${ROCM_PATH} --offload-arch=gfx90a -x hip
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp
-CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNDEBUG -DNO_MPI -DDISABLE_PNG $(GPU_MEMORY)
+CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNDEBUG -DDISABLE_PNG $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
-LDFLAGS=-L$(ROCM_PATH)/hip/lib -lamdhip64
+LDFLAGS=--rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64
 # LIBS=-lpng
 LIBS=
 endif

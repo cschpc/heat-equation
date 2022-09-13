@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <hip/hip_runtime.h>
 
 #define GPU_CHECK(errarg)   __checkErrorFunc(errarg, __FILE__, __LINE__)
 #define CHECK_ERROR_MSG(errstr) __checkErrMsgFunc(errstr, __FILE__, __LINE__)
