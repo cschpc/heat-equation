@@ -23,7 +23,11 @@ contains
 
     buf_size = (field0%nx + 2) * (field0%ny + 2)
 
+#ifdef GPU_MPI
 !$acc host_data use_device(data)
+#else
+!$acc update host(data)
+#endif
     ! Send to left, receive from right
     call mpi_sendrecv(data(:, :, 1), buf_size, MPI_DOUBLE_PRECISION, &
          & parallel%nleft, 11, &
@@ -37,7 +41,11 @@ contains
          & data(:, :, 0), buf_size, MPI_DOUBLE_PRECISION,&
          & parallel%nleft, 12, &
          & MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
+#ifdef GPU_MPI
 !$acc end host_data
+#else
+!$acc update device(data)
+#endif
   end subroutine exchange
 
   ! Compute one time step of temperature evolution
