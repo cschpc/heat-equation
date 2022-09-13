@@ -77,5 +77,18 @@ void initialize(int argc, char *argv[], Field& current,
         std::cout << "Number of MPI tasks: " << parallel.size 
                   << " (" << parallel.dims[0] << " x " << parallel.dims[1] << " x " 
                   << parallel.dims[2] << ")" << std::endl;
+        std::cout << "Number of GPUs per node: " << parallel.dev_count << std::endl;
+       #ifndef NO_MPI
+        #if defined MPI_DATATYPES && MPI_NEIGHBORHOOD
+        std::cout << "Both MPI_DATATYPES and MPI_NEIGHBORHOOD defined; "
+                  << "using isend/irecv with datatypes in communication" << std::endl;
+        #elif defined MPI_DATATYPES
+        std::cout << "Using isend/irecv with datatypes in communication" << std::endl;
+        #elif defined MPI_NEIGHBORHOOD
+        std::cout << "Using neighborhood collective in communication" << std::endl;
+        #else
+        std::cout << "Using manual packing of send/recv buffers" << std::endl;
+        #endif
+        #endif
     }
 }
