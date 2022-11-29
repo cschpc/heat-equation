@@ -1,5 +1,8 @@
 #pragma once
 #include "matrix.hpp"
+#ifdef MPI_ONESIDED
+#include <mpi.h>
+#endif
 
 // Forward declaration for parallel
 struct ParallelData;
@@ -20,6 +23,10 @@ struct Field {
 
     Matrix<double> temperature;
 
+#ifdef MPI_ONESIDED
+    MPI_Win rma_window;   
+#endif
+
     void setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel);
 
     void generate(const ParallelData& parallel);
@@ -29,6 +36,10 @@ struct Field {
 
     // standard (i,j) syntax for getting elements
     const double& operator()(int i, int j, int k) const {return temperature(i, j, k);}
+
+#ifdef MPI_ONESIDED
+    void finalize() {MPI_Win_free(&rma_window);}
+#endif
 
 };
 

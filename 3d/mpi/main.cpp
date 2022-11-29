@@ -109,6 +109,10 @@ int main(int argc, char **argv)
 
 #ifndef NO_MPI
     parallelization.finalize();
+#ifdef MPI_ONESIDED
+    current.finalize();
+    previous.finalize();
+#endif
     MPI_Finalize();
 #endif
 

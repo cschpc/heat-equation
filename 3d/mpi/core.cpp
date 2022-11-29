@@ -99,7 +99,7 @@ void exchange_neighborhood(Field& field, ParallelData& parallel)
 }
 #endif
 
-#if !(defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD)
+#if !(defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD || defined MPI_ONESIDED)
 // Communicate with manual packing to/from send/receive buffers
 void exchange_packing(Field& field, ParallelData& parallel)
 {
@@ -216,6 +216,59 @@ void exchange_packing(Field& field, ParallelData& parallel)
 }
 #endif
 
+#ifdef MPI_ONESIDED
+// Isend / Irecv with user defined datatypes
+void exchange_onesided(Field& field, ParallelData& parallel)
+{
+    size_t buf_size, offset;
+    double *sbuf, *rbuf;
+    MPI_Win_fence(0, field.rma_window);
+    // x-direction
+    sbuf = field.temperature.data(1, 0, 0);
+    offset = (field.nx + 1) * (field.ny + 2) * (field.nz + 2);
+   
+    MPI_Put(sbuf, 1, parallel.halotypes[0],
+            parallel.ngbrs[0][0], offset, 1, parallel.halotypes[0], 
+            field.rma_window);
+    
+    sbuf = field.temperature.data(field.nx, 0, 0);
+    offset = 0;
+    rbuf = field.temperature.data(0, 0, 0);
+    MPI_Put(sbuf, 1, parallel.halotypes[0],
+            parallel.ngbrs[0][1], offset, 1, parallel.halotypes[0],
+            field.rma_window);
+    
+    // y-direction
+    sbuf = field.temperature.data(0, 1, 0);
+    offset = (field.ny + 1) * (field.nz + 2);
+    MPI_Put(sbuf, 1, parallel.halotypes[1],
+            parallel.ngbrs[1][0], offset, 1, parallel.halotypes[1],
+            field.rma_window);
+    
+    sbuf = field.temperature.data(0, field.ny, 0);
+    offset = 0;
+    MPI_Put(sbuf, 1, parallel.halotypes[1],
+            parallel.ngbrs[1][1], offset, 1, parallel.halotypes[1],
+            field.rma_window);
+  
+    // z-direction
+    sbuf = field.temperature.data(0, 0, 1);
+    offset = (field.nz + 1);
+    MPI_Put(sbuf, 1, parallel.halotypes[2],
+            parallel.ngbrs[2][0], offset, 1, parallel.halotypes[2],
+            field.rma_window);
+    
+    sbuf = field.temperature.data(0, 0, field.nz);
+    offset = 0;
+    MPI_Put(sbuf, 1, parallel.halotypes[2],
+            parallel.ngbrs[2][1], offset, 1, parallel.halotypes[2],
+            field.rma_window);
+    
+    MPI_Win_fence(0, field.rma_window);
+}
+#endif
+
+
 // Exchange the boundary values
 void exchange(Field& field, ParallelData& parallel)
 {
@@ -225,6 +278,8 @@ void exchange(Field& field, ParallelData& parallel)
     exchange_datatypes(field, parallel);
 #elif defined MPI_NEIGHBORHOOD
     exchange_neighborhood(field, parallel);
+#elif defined MPI_ONESIDED
+    exchange_onesided(field, parallel);
 #else
     exchange_packing(field, parallel);
 #endif

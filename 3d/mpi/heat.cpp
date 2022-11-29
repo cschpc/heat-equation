@@ -43,7 +43,7 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
     int sizes[3];
     int offsets[3] = {0, 0, 0};
     int subsizes[3];
-#if defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD
+#if defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD || defined MPI_ONESIDED
     sizes[0] = nx + 2;
     sizes[1] = ny + 2;
     sizes[2] = nz + 2;
@@ -79,6 +79,12 @@ void Field::setup(int nx_in, int ny_in, int nz_in, ParallelData& parallel)
     parallel.recv_buffers[2][0] = Matrix<double> (nx + 2, ny + 2);
     parallel.recv_buffers[2][1] = Matrix<double> (nx + 2, ny + 2);
 #endif
+
+#ifdef MPI_ONESIDED
+    MPI_Win_create(temperature.data(), (nx + 2) * (ny + 2) * (nz + 2) * sizeof(double), 
+                   sizeof(double), MPI_INFO_NULL, parallel.comm, &rma_window);
+#endif
+
 
     // MPI datatype for subblock needed in I/O
     // Rank 0 uses datatype for receiving data into full array while

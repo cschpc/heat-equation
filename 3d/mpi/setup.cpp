@@ -64,11 +64,12 @@ void initialize(int argc, char *argv[], Field& current,
         read_field(current, input_file, parallel);
     } else {
         current.setup(height, width, length, parallel);
+        previous.setup(height, width, length, parallel);
         current.generate(parallel);
     }
 
     // copy "current" field also to "previous"
-    previous = current;
+    previous.temperature = current.temperature;
 
     if (0 == parallel.rank) {
         std::cout << "Simulation parameters: " 
@@ -85,6 +86,8 @@ void initialize(int argc, char *argv[], Field& current,
         std::cout << "Using isend/irecv with datatypes in communication" << std::endl;
         #elif defined MPI_NEIGHBORHOOD
         std::cout << "Using neighborhood collective in communication" << std::endl;
+        #elif defined MPI_ONESIDED
+        std::cout << "Using one-sided communication" << std::endl;
         #else
         std::cout << "Using manual packing of send/recv buffers" << std::endl;
         #endif
