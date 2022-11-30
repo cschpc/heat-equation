@@ -123,6 +123,10 @@ void exchange_init_packing(Field& field, ParallelData& parallel)
     MPI_Irecv(rbuf, buf_size, MPI_DOUBLE,
               parallel.ngbrs[0][1], 11, parallel.comm, &parallel.requests[3]);
 
+#ifdef MPI_3D_DECOMPOSITION
+    printf("3D decomposition not implemented\n");
+    MPI_Abort(-1, MPI_COMM_WORLD);
+#endif
     /* TODO
     // y-direction
     buf_size = (field.nx + 2) * (field.nz + 2);
