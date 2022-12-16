@@ -27,6 +27,15 @@ module heat
      integer :: dev_count
   end type parallel_data
 
+interface
+
+  subroutine hipSetDevice(dev) bind(C, name='hipSetDevice')
+      use, intrinsic :: iso_c_binding
+      integer(c_int), intent(in), value :: dev
+  end subroutine
+
+end interface
+
 contains
   ! Initialize the field type metadata
   ! Arguments:
@@ -118,6 +127,8 @@ contains
     end if
 
     call acc_set_device_num(my_device, acc_get_device_type())
+    ! device needs to be set also for HIP!
+    call hipSetDevice(my_device)
 #endif
 
 

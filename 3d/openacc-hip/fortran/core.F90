@@ -7,7 +7,7 @@ module core
   interface
 
     subroutine evolve_hip(curr, prev, a, dt, nx, ny, nz, dx, dy, dz) bind(C, name='evolve')
-      USE, intrinsic :: iso_c_binding
+      use, intrinsic :: iso_c_binding
 #ifdef _CRAYFTN
       type(c_ptr), value :: curr, prev
 #else
