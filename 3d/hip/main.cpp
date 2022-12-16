@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 // Create streams for computing (edge computation with three different streams)
     hipStream_t streams[3];
     for (int i=0; i < 3; i++)
-      hipStreamCreateWithFlags(&streams[i],hipStreamNonBlocking);
+      GPU_CHECK( hipStreamCreateWithFlags(&streams[i],hipStreamNonBlocking) );
 
     // Output the initial field
     write_field(current, 0, parallelization);
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     write_field(previous, nsteps, parallelization);
 
     for (int i=0; i < 3; i++)
-      hipStreamDestroy(streams[i]);
+      GPU_CHECK( hipStreamDestroy(streams[i]) );
 
 #ifndef NO_MPI
     MPI_Finalize();

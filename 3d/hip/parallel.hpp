@@ -65,7 +65,7 @@ struct ParallelData {
 
       MPI_Comm_free(&intranode_comm);
 
-      hipGetDeviceCount(&dev_count);
+      GPU_CHECK( hipGetDeviceCount(&dev_count) );
 
       // Allow oversubscribing devices
       int my_device = node_rank % dev_count;
@@ -76,7 +76,7 @@ struct ParallelData {
                          ", GPUs per node: " << dev_count << std::endl;
       }
 
-      hipSetDevice(my_device);
+      GPU_CHECK( hipSetDevice(my_device) );
 
 #endif
     };
