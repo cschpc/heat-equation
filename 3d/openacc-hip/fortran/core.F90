@@ -9,12 +9,12 @@ module core
     subroutine evolve_hip(curr, prev, a, dt, nx, ny, nz, dx, dy, dz) bind(C, name='evolve')
       USE, intrinsic :: iso_c_binding
 #ifdef _CRAYFTN
-      type(c_ptr), intent(inout) :: curr, prev
+      type(c_ptr), value :: curr, prev
 #else
       type(c_devptr), intent(inout) :: curr, prev
 #endif
-      real(c_double), intent(in) :: a, dt, dx, dy, dz
-      integer(c_int), intent(in) :: nx, ny, nz
+      real(c_double), value :: a, dt, dx, dy, dz
+      integer(c_int), value :: nx, ny, nz
     end subroutine evolve_hip
 
   end interface
@@ -79,6 +79,7 @@ contains
     real(kind=dp), intent(in) :: a, dt
 
     real(dp), pointer, contiguous, dimension(:,:,:) :: currdata, prevdata
+    type(c_ptr) :: curr_p, prev_p
     integer :: i, j, k, nx, ny, nz
     real(kind=dp) :: dx, dy, dz
 
@@ -93,7 +94,12 @@ contains
     currdata => curr%data
     prevdata => prev%data
 
-    call evolve_hip(acc_deviceptr(currdata), acc_deviceptr(prevdata), a, dt, nx, ny, nz, dx, dy, dz)
+    ! call evolve_hip(acc_deviceptr(currdata), acc_deviceptr(prevdata), a, dt, nx, ny, nz, dx, dy, dz)
+!$acc host_data use_device(currdata, prevdata)
+    curr_p = c_loc(currdata)
+    prev_p = c_loc(prevdata)
+!$acc end host_data
+    call evolve_hip(curr_p, prev_p, a, dt, nx, ny, nz, dx, dy, dz)
   end subroutine evolve
 
   ! Start a data region and copy temperature fields to the device
