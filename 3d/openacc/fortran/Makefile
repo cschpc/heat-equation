@@ -26,9 +26,9 @@ endif
 ifeq ($(COMP),cray)
 FC=ftn
 CC=gcc
-FCFLAGS=-O3 -DDISABLE_PNG -DGPU_MPI
+FCFLAGS=-O3 -DDISABLE_PNG -DGPU_MPI -hacc
 CCFLAGS=-O3 -Wall -I$(COMMONDIR)
-LDFLAGS=
+LDFLAGS=-hacc
 # LIBS=-lpng
 endif
 
