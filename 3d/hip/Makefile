@@ -13,32 +13,36 @@ LIBS=-lpng
 endif
 
 ifeq ($(COMP),gnu)
-CXX=g++
+CXX=CC
 CC=gcc
-HIPCC=hipcc --x cu
+HIPCC=hipcc 
 # GPU_MEMORY=-DUNIFIED_MEMORY -D__HIP_PLATFORM_NVCC__ -Wno-deprecated-declarations
 # GPU_MEMORY=-DPINNED_MEMORY -D__HIP_PLATFORM_NVCC__ -Wno-deprecated-declarations
 HIPFLAGS=-O3 -DNO_MPI $(GPU_MEMORY)
+GPU_MEMORY=-DPINNED_MEMORY -D__HIP_PLATFORM_AMD__
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp 
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp 
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNO_MPI $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
-LDFLAGS=-lcudart
-LIBS=-lpng
+LDFLAGS=-lamdhip64
+# LIBS=-lpng
 endif
 
 ifeq ($(COMP),cray)
 NOPNG=true
 CXX=CC
 CC=cc
-HIPCC=CC
+# HIPCC=CC
+HIPCC=hipcc
 GPU_MEMORY=-DPINNED_MEMORY -D__HIP_PLATFORM_AMD__
-HIPFLAGS=$(GPU_MEMORY) -O3 -std=c++11 --rocm-path=${ROCM_PATH} --offload-arch=gfx90a -x hip
+# HIPFLAGS=$(GPU_MEMORY) -O3 -std=c++11 --rocm-path=${ROCM_PATH} --offload-arch=gfx90a -x hip -DUSE_STREAMS
+HIPFLAGS=$(GPU_MEMORY) -O3 -std=c++11 --rocm-path=${ROCM_PATH} --offload-arch=gfx90a -DUSE_STREAMS 
 # CCFLAGS=-g -O3 -ffast-math -mfma -march=native -Wall -I$(COMMONDIR) -DNDEBUG -funsafe-math-optimizations -fopenmp
 #CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG -fopenmp
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNDEBUG -DDISABLE_PNG $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
-LDFLAGS=--rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64
+# LDFLAGS=--rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64
+LDFLAGS=-L${ROCM_PATH}/lib -lamdhip64
 # LIBS=-lpng
 LIBS=
 endif
