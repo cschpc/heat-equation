@@ -7,47 +7,12 @@
 #include "parallel.hpp"
 #include "heat.hpp"
 
-// Exchange the boundary values
-void exchange(Field& field, ParallelData& parallel)
+#ifdef MPI_DATATYPES
+// Isend / Irecv with user defined datatypes
+void inline exchange_datatypes(Field& field, ParallelData& parallel)
 {
-#ifdef NO_MPI
-    return;
-#else
     size_t buf_size;
     double *sbuf, *rbuf;
-#ifdef MPI_NEIGHBORHOOD
-    MPI_Datatype types[6] = {parallel.halotypes[0], parallel.halotypes[0],
-                             parallel.halotypes[1], parallel.halotypes[1],
-                             parallel.halotypes[2], parallel.halotypes[2]};
-    int counts[6] = {1, 1, 1, 1, 1, 1};
-    MPI_Aint sdisps[6], rdisps[6], disp0;
-
-    // Determine displacements
-    disp0 = reinterpret_cast<MPI_Aint> (field.temperature.data());
-    sdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(1, 0, 0));        
-    sdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx, 0, 0)); 
-    sdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 1, 0));        
-    sdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny, 0)); 
-    sdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 1));        
-    sdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz)); 
-
-    rdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
-    rdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx + 1, 0, 0)); 
-    rdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
-    rdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny + 1, 0)); 
-    rdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
-    rdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz + 1)); 
-
-    for (int i=0; i < 6; i++) {
-      sdisps[i] -= disp0;
-      rdisps[i] -= disp0;
-    }
-
-    MPI_Neighbor_alltoallw(field.temperature.data(), counts, sdisps, types,
-                           field.temperature.data(), counts, rdisps, types,
-                           parallel.comm);
-
-#elif defined MPI_DATATYPES
     // x-direction
     sbuf = field.temperature.data(1, 0, 0);
     rbuf = field.temperature.data(field.nx + 1, 0, 0);
@@ -94,7 +59,52 @@ void exchange(Field& field, ParallelData& parallel)
               parallel.ngbrs[2][0], 32, parallel.comm, &parallel.requests[11]);
     
     MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
-#else
+}
+#endif
+
+#ifdef MPI_NEIGHBORHOOD
+// Communication with neighborhood collective
+void inline exchange_neighborhood(Field& field, ParallelData& parallel)
+{
+    MPI_Datatype types[6] = {parallel.halotypes[0], parallel.halotypes[0],
+                             parallel.halotypes[1], parallel.halotypes[1],
+                             parallel.halotypes[2], parallel.halotypes[2]};
+    int counts[6] = {1, 1, 1, 1, 1, 1};
+    MPI_Aint sdisps[6], rdisps[6], disp0;
+
+    // Determine displacements
+    disp0 = reinterpret_cast<MPI_Aint> (field.temperature.data());
+    sdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(1, 0, 0));        
+    sdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx, 0, 0)); 
+    sdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 1, 0));        
+    sdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny, 0)); 
+    sdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 1));        
+    sdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz)); 
+
+    rdisps[0] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
+    rdisps[1] =  reinterpret_cast<MPI_Aint> (field.temperature.data(field.nx + 1, 0, 0)); 
+    rdisps[2] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
+    rdisps[3] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, field.ny + 1, 0)); 
+    rdisps[4] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, 0));            
+    rdisps[5] =  reinterpret_cast<MPI_Aint> (field.temperature.data(0, 0, field.nz + 1)); 
+
+    for (int i=0; i < 6; i++) {
+      sdisps[i] -= disp0;
+      rdisps[i] -= disp0;
+    }
+
+    MPI_Neighbor_alltoallw(field.temperature.data(), counts, sdisps, types,
+                           field.temperature.data(), counts, rdisps, types,
+                           parallel.comm);
+}
+#endif
+
+#if !(defined MPI_DATATYPES || defined MPI_NEIGHBORHOOD)
+// Communicate with manual packing to/from send/receive buffers
+void inline exchange_packing(Field& field, ParallelData& parallel)
+{
+    size_t buf_size;
+    double *sbuf, *rbuf;
     // x-direction
     buf_size = (field.ny + 2) * (field.nz + 2);
     // copy to halo
@@ -203,10 +213,23 @@ void exchange(Field& field, ParallelData& parallel)
         for (int j=0; j < field.ny + 2; j++) {
           field.temperature(i, j, field.nz + 1) = parallel.recv_buffers[2][1](i, j);
         }
+}
+#endif
 
-#endif // MPI_DATATYPES
+// Exchange the boundary values
+void exchange(Field& field, ParallelData& parallel)
+{
+#ifdef NO_MPI
+    return;
+#elif defined MPI_DATATYPES
+    exchange_datatypes(field, parallel);
+#elif defined MPI_NEIGHBORHOOD
+    exchange_neighborhood(field, parallel);
+#else
+    exchange_packing(field, parallel);
 #endif
 }
+    
 
 // Update the temperature values using five-point stencil */
 void evolve(Field& curr, const Field& prev, const double a, const double dt)
@@ -223,7 +246,7 @@ void evolve(Field& curr, const Field& prev, const double a, const double dt)
   // Determine the temperature field at next time step
   // As we have fixed boundary conditions, the outermost gridpoints
   // are not updated.
-#pragma omp for collapse(2) schedule(static) 
+#pragma omp for collapse(2) schedule(static)
   for (int i = 1; i < curr.nx + 1; i++) {
     for (int j = 1; j < curr.ny + 1; j++) {
 #pragma omp simd
