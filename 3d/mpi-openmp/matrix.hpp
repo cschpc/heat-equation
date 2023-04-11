@@ -56,7 +56,13 @@ public:
         nx = nx_in;
         ny = ny_in;
         nz = nz_in;
+#ifdef USE_STD_VECTOR
         _data.resize(nx * ny * nz);
+#else
+	delete[] _data;
+        _data = new T [nx*ny*nz];
+#endif
+
     };
 
     // standard (i,j) syntax for setting elements
