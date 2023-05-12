@@ -22,9 +22,18 @@ LDFLAGS=
 LIBS=-lpng
 endif
 
+ifeq ($(COMP),cray)
+FC=ftn
+CC=cc
+FCFLAGS=-DDISABLE_PNG -O3 -Wall -fopenmp
+CCFLAGS=-O3 -Wall -I$(COMMONDIR)
+LDFLAGS=
+#LIBS=-lpng
+endif
+
 EXE=heat_openmp
-OBJS=main.o heat_mod.o core.o setup.o utilities.o io.o pngwriter_mod.o
-OBJS_PNG=$(COMMONDIR)/pngwriter.o
+OBJS=main.o heat_mod.o core.o setup.o utilities.o io.o
+#OBJS_PNG=$(COMMONDIR)/pngwriter.o pngwriter_mod.o
 
 all: $(EXE)
 
