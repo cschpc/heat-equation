@@ -26,7 +26,7 @@ contains
 #ifdef GPU_MPI
 !$acc host_data use_device(data)
 #else
-!$acc update host(data)
+!$acc update host(data(:,:,1), data(:,:,field0%nz))
 #endif
     ! Send to left, receive from right
     call mpi_sendrecv(data(:, :, 1), buf_size, MPI_DOUBLE_PRECISION, &
@@ -44,9 +44,74 @@ contains
 #ifdef GPU_MPI
 !$acc end host_data
 #else
-!$acc update device(data)
+!$acc update device(data(:,:,0), data(:,:,field0%nz+1))
 #endif
   end subroutine exchange
+
+  subroutine exchange_init(field0, parallel)
+    use mpi
+
+    implicit none
+
+    type(field), target, intent(inout) :: field0
+    type(parallel_data), intent(in) :: parallel
+
+    real(dp), pointer, contiguous, dimension(:,:,:) :: data
+
+    integer :: buf_size
+
+    integer :: ierr
+
+    data => field0%data
+
+    buf_size = (field0%nx + 2) * (field0%ny + 2)
+
+#ifdef GPU_MPI
+!$acc host_data use_device(data)
+#else
+!$acc update host(data(:,:,1), data(:,:,field0%nz))
+#endif
+    ! Start to receive
+    call mpi_irecv(data(:, :, field0%nz + 1), buf_size, MPI_DOUBLE_PRECISION, &
+         & parallel%nright, 11, MPI_COMM_WORLD, parallel%requests(1), ierr)
+    call mpi_irecv(data(:, :, 0), buf_size, MPI_DOUBLE_PRECISION,&
+         & parallel%nleft, 12, MPI_COMM_WORLD, parallel%requests(2), ierr)
+
+    ! Start to send
+    call mpi_isend(data(:, :, 1), buf_size, MPI_DOUBLE_PRECISION, &
+         & parallel%nleft, 11, MPI_COMM_WORLD, parallel%requests(3), ierr)
+    call mpi_isend(data(:, :, field0%nz), buf_size, MPI_DOUBLE_PRECISION, &
+         & parallel%nright, 12, MPI_COMM_WORLD, parallel%requests(4), ierr)
+
+#ifdef GPU_MPI
+!$acc end host_data
+#endif
+
+  end subroutine exchange_init
+
+  subroutine exchange_finalize(field0, parallel)
+    use mpi
+
+    implicit none
+
+    type(field), target, intent(inout) :: field0
+    type(parallel_data), intent(in) :: parallel
+
+    real(dp), pointer, contiguous, dimension(:,:,:) :: data
+
+    integer :: buf_size
+
+    integer :: ierr
+
+    data => field0%data
+
+    call mpi_waitall(4, parallel%requests, mpi_statuses_ignore, ierr)
+
+#ifndef GPU_MPI
+!$acc update device(data(:,:,0), data(:,:,field0%nz+1))
+#endif
+
+  end subroutine exchange_finalize
 
   ! Compute one time step of temperature evolution
   ! Arguments:
