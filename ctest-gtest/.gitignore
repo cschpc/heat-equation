@@ -1,4 +1,4 @@
 .cache/
 build/
-heat_tested/
+heattests/
 compile_commands.json
