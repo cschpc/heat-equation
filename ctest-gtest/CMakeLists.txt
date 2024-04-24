@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(heattests VERSION 1.0 DESCRIPTION "Heat equation w/ cmake, ctest and gtest" LANGUAGES CXX C)
+project(${project_name} VERSION 1.0 DESCRIPTION "Heat equation w/ cmake, ctest and gtest" LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
