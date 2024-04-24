@@ -1,6 +1,5 @@
 /* Heat equation solver in 2D. */
 
-#include <string>
 #include <iostream>
 #include <iomanip>
 #include <mpi.h>
