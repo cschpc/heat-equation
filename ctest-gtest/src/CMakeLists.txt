@@ -27,18 +27,23 @@ target_compile_definitions(heat_tested
     ${PND_DEFINITIONS}
     )
 
-target_link_libraries(heat_tested
-    PRIVATE
-    ${PNG_LIBRARIES}
-    ${MPI_C_LIBRARIES}
-    )
-
 target_include_directories(heat_tested
     SYSTEM
     PRIVATE
     ${PNG_INCLUDE_DIRS}
     ${MPI_C_INCLUDE_DIRS}
     ${common_dir}
+    )
+
+target_link_options(heat_tested
+    PRIVATE
+    ${MPI_C_LINK_FLAGS}
+    )
+
+target_link_libraries(heat_tested
+    PRIVATE
+    ${PNG_LIBRARIES}
+    ${MPI_C_LIBRARIES}
     )
 
 install(TARGETS heat_tested DESTINATION ${install_dir})
