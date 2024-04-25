@@ -9,7 +9,7 @@ CXX=mpicxx
 CC=pgcc
 CCFLAGS=-g -O3 -fopenmp -I$(COMMONDIR)
 LDFLAGS=-fopenmp
-LIBS=-lpng 
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -17,7 +17,7 @@ CXX=mpicxx
 CC=gcc
 CCFLAGS=-g -O3 -fopenmp -Wall -I$(COMMONDIR)
 LDFLAGS=-fopenmp
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),intel)
@@ -27,7 +27,7 @@ CCFLAGS=-g -O3 -qopenmp -I$(COMMONDIR)
 LDFLAGS=-qopenmp
 # CCFLAGS=-g -O3 -I$(COMMONDIR)
 # LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_hybrid

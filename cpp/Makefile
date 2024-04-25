@@ -9,7 +9,7 @@ CXX=mpicxx
 CC=pgcc
 CCFLAGS=-g -O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng 
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -17,7 +17,7 @@ CXX=mpicxx
 CC=gcc
 CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),intel)
@@ -25,7 +25,7 @@ CXX=mpicxx
 CC=gcc
 CCFLAGS=-g -O3 -I$(COMMONDIR) -DNDEBUG
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_mpi

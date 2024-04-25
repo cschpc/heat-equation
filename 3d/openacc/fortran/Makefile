@@ -10,7 +10,7 @@ CC=gcc
 FCFLAGS=-O3 -acc
 CCFLAGS=-O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -20,7 +20,7 @@ CC=gcc
 FCFLAGS=-O3 -Wall 
 CCFLAGS=-O3 -Wall -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),gnu-lumi)
@@ -30,7 +30,7 @@ CC=gcc
 FCFLAGS=-DDISABLE_PNG -fopenacc -O3 -DGPU_MPI
 CCFLAGS=-Wall -I$(COMMONDIR) -g 
 LDFLAGS=-fopenacc -g -Wl,-rpath -Wl,${LD_LIBRARY_PATH}
-# LIBS=-lpng
+# LIBS=
 endif
 
 ifeq ($(COMP),cray)
@@ -40,7 +40,7 @@ CC=gcc
 FCFLAGS=-DDISABLE_PNG -hacc -O3 -DGPU_MPI
 CCFLAGS=-Wall -I$(COMMONDIR) -g 
 LDFLAGS=-hacc -g -Wl,-rpath -Wl,${LD_LIBRARY_PATH}
-# LIBS=-lpng
+# LIBS=
 LIBS=-lroctx64 -lroctracer64
 endif
 

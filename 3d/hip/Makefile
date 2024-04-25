@@ -9,7 +9,7 @@ CXX=mpicxx
 CC=pgcc
 CCFLAGS=-g -O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng 
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -25,7 +25,7 @@ GPU_MEMORY=-DPINNED_MEMORY -D__HIP_PLATFORM_AMD__
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNO_MPI $(GPU_MEMORY)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=-lamdhip64
-# LIBS=-lpng
+# LIBS=
 endif
 
 ifeq ($(COMP),cray)
@@ -43,7 +43,7 @@ CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DNDEBUG -DDISABLE
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 # LDFLAGS=--rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64
 LDFLAGS=-L${ROCM_PATH}/lib -lamdhip64
-# LIBS=-lpng
+# LIBS=
 LIBS=
 endif
 
@@ -53,7 +53,7 @@ CXX=mpicxx
 CC=gcc
 CCFLAGS=-g -O3 -I$(COMMONDIR) -DNDEBUG
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_hip
