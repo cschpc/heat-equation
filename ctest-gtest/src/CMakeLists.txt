@@ -71,7 +71,7 @@ target_link_libraries(${binary} PUBLIC ${lib})
 
 install(
     TARGETS ${lib} ${binary}
-    CONFIGURATIONS Release ReleaseWithDebInfo Debug
+    CONFIGURATIONS Release ReleaseWithDebInfo
     ARCHIVE DESTINATION ${install_dir}/lib
     LIBRARY DESTINATION ${install_dir}/lib
     RUNTIME DESTINATION ${install_dir}/bin

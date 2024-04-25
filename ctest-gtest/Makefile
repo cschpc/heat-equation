@@ -1,4 +1,6 @@
 # TODO: can the all and debug be unified somehow?
+MAKEFLAGS += --silent
+
 project_name:=heattests
 root_dir:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 source_dir:=$(root_dir)
@@ -40,10 +42,9 @@ debug:
 		-B $${build_dir} \
 		-S $(source_dir) \
 		-DCMAKE_BUILD_TYPE:STRING=$${build_type} \
-		-DCMAKE_INSTALL_PREFIX:PATH=$(install_dir) \
 		-Dproject_name=$(project_name) \
 		-Dpackage_tests=OFF
 
 	cmake \
 		--build $${build_dir} \
-		--target install -j8
+		--target all -j8
