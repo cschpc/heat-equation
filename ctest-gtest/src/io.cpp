@@ -1,17 +1,17 @@
 /* I/O related functions for heat equation solver */
 
-#include <string>
-#include <iomanip> 
 #include <fstream>
+#include <iomanip>
 #include <mpi.h>
+#include <string>
 
 #include "matrix.hpp"
 #include "heat.hpp"
 #include "pngwriter.h"
 
 // Write a picture of the temperature field
-void write_field(const Field& field, const int iter, const ParallelData parallel)
-{
+void write_field(const Field &field, const int iter,
+                 const ParallelData &parallel) {
 
     auto height = field.nx * parallel.size;
     auto width = field.ny;
@@ -49,13 +49,11 @@ void write_field(const Field& field, const int iter, const ParallelData parallel
         MPI_Send(tmp_mat.data(), field.nx * field.ny,
                  MPI_DOUBLE, 0, 22, MPI_COMM_WORLD);
     }
-
 }
 
 // Read the initial temperature distribution from a file
-void read_field(Field& field, std::string filename,
-                const ParallelData parallel)
-{
+void read_field(Field &field, std::string filename,
+                const ParallelData &parallel) {
     std::ifstream file;
     file.open(filename);
     // Read the header
@@ -101,5 +99,4 @@ void read_field(Field& field, std::string filename,
         // bottom boundary
         field.temperature(field.nx + 1, j) = field.temperature(field.nx, j);
     }
-
 }

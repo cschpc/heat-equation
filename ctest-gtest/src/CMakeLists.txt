@@ -15,6 +15,7 @@ target_sources(
     PRIVATE
     core.cpp
     heat.cpp
+    input.cpp
     io.cpp
     lib.cpp
     parallel.cpp
@@ -43,12 +44,12 @@ target_include_directories(${objs}
     SYSTEM
     PRIVATE
     ${MPI_C_INCLUDE_DIRS}
+    ${dependencies}
     )
 
 target_include_directories(${objs}
     PRIVATE
     ${common_dir}
-    PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     )
 

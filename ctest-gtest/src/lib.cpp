@@ -1,28 +1,30 @@
 /* Heat equation solver in 2D. */
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <mpi.h>
 
 #include "heat.hpp"
+#include "input.hpp"
 
 namespace heat{
 void run(int argc, char **argv) {
     MPI_Init(&argc, &argv);
 
-    // Image output interval
-    constexpr int image_interval = 1500;
-
     // Parallelization info
-    ParallelData parallelization = {};
+    ParallelData parallelization;
 
-    // Number of time steps
-    int nsteps = 0;
+    // Read input from file
+    std::string fname = "";
+    if (argc > 1) {
+        fname = argv[1];
+    }
+    const Input input = read_input(fname.c_str());
 
     // Temperature fields
     Field current = {};
     Field previous = {};
-    initialize(argc, argv, current, previous, nsteps, parallelization);
+    initialize(input, current, previous, parallelization);
 
     // Output the initial field
     write_field(current, 0, parallelization);
@@ -35,21 +37,21 @@ void run(int argc, char **argv) {
 
     // Diffusion constant
     constexpr double a = 0.5;
-    const auto dx2 = current.dx * current.dx;
-    const auto dy2 = current.dy * current.dy;
+    constexpr double dx2 = Field::dx2;
+    constexpr double dy2 = Field::dy2;
 
     // Largest stable time step
-    const auto dt = dx2 * dy2 / (2.0 * a * (dx2 + dy2));
+    constexpr double dt = dx2 * dy2 / (2.0 * a * (dx2 + dy2));
 
     //Get the start time stamp
     const auto start_clock = MPI_Wtime();
 
     // Time evolve
-    for (int iter = 1; iter <= nsteps; iter++) {
+    for (int iter = 1; iter <= input.nsteps; iter++) {
         exchange(previous, parallelization);
         evolve(current, previous, a, dt);
 
-        if (iter % image_interval == 0) {
+        if (iter % input.image_interval == 0) {
             write_field(current, iter, parallelization);
         }
 
@@ -59,7 +61,7 @@ void run(int argc, char **argv) {
     }
 
     const auto stop_clock = MPI_Wtime();
-    constexpr auto ref_val = 59.281239;
+    constexpr double ref_val = 59.281239;
 
     avg = average(previous);
     if (0 == parallelization.rank) {
@@ -74,9 +76,8 @@ void run(int argc, char **argv) {
     }
 
     // Output the final field
-    write_field(previous, nsteps, parallelization);
+    write_field(previous, input.nsteps, parallelization);
 
     MPI_Finalize();
 }
 }
-

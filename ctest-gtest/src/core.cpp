@@ -5,8 +5,7 @@
 #include "heat.hpp"
 
 // Exchange the boundary values
-void exchange(Field& field, const ParallelData parallel)
-{
+void exchange(Field &field, const ParallelData &parallel) {
 
     // Send to up, receive from down
     auto sbuf = field.temperature.data(1, 0);
@@ -23,27 +22,30 @@ void exchange(Field& field, const ParallelData parallel)
                  parallel.ndown, 12,
                  rbuf, field.ny + 2, MPI_DOUBLE,
                  parallel.nup, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
 }
 
 // Update the temperature values using five-point stencil */
 void evolve(Field& curr, const Field& prev, const double a, const double dt)
 {
 
-  // Compilers do not necessarily optimize division to multiplication, so make it explicit
-  auto inv_dx2 = 1.0 / (prev.dx * prev.dx);
-  auto inv_dy2 = 1.0 / (prev.dy * prev.dy);
-
   // Determine the temperature field at next time step
   // As we have fixed boundary conditions, the outermost gridpoints
   // are not updated.
   for (int i = 1; i < curr.nx + 1; i++) {
     for (int j = 1; j < curr.ny + 1; j++) {
-            curr(i, j) = prev(i, j) + a * dt * (
-	       ( prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j) ) * inv_dx2 +
-	       ( prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1) ) * inv_dy2
-               );
+        curr(i, j) = prev(i, j) +
+                     a * dt *
+                         ((prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j)) *
+                              Field::inv_dx2 +
+                          (prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1)) *
+                              Field::inv_dy2);
     }
   }
 
 }
+
+namespace heat {
+double stencil(int i, int j, const Field &field, double a, double dt) {
+    return 0.0;
+}
+} // namespace heat

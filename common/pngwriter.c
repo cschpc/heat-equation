@@ -1,8 +1,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "stb_image_write.h"
 
 #include "pngwriter.h"
-#include <stdint.h>
 #include <stdlib.h>
 
 /* Datatype for RGB pixel */
@@ -117,10 +118,11 @@ pixel_t cmap(double value, const double scaling, const double offset) {
  *                  layout. That is, if 'f' is given, then rows
  *                  and columns are swapped.
  */
-int save_png(double *data, const int height, const int width, const char *fname,
-             const char lang) {
+
+uint8_t *bytes_from_data(double *data, const int height, const int width,
+                         const int num_channels, const char *fname,
+                         const char lang) {
     const int c_layout = lang == 'c' || lang == 'C';
-    const size_t num_channels = 3;
     const size_t num_bytes = height * width * num_channels;
     uint8_t *bytes = (uint8_t *)malloc(num_bytes);
 
@@ -139,9 +141,23 @@ int save_png(double *data, const int height, const int width, const char *fname,
         }
     }
 
+    return bytes;
+}
+
+int save_png(double *data, const int height, const int width, const char *fname,
+             const char lang) {
+    const size_t num_channels = 3;
+    uint8_t *bytes =
+        bytes_from_data(data, height, width, num_channels, fname, lang);
     int status = !stbi_write_png(fname, width, height, num_channels, bytes,
                                  num_channels * width);
     free(bytes);
 
     return status;
 }
+
+uint8_t *load_png(const char *fname, int *nx, int *ny, int *channels) {
+    return stbi_load(fname, nx, ny, channels, 0);
+}
+
+void release_png(void *data) { stbi_image_free(data); }

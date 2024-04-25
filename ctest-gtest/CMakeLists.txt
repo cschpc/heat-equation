@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(common_dir "${CMAKE_SOURCE_DIR}/../common")
 set(install_dir "${PROJECT_NAME}")
+set(dependencies "${CMAKE_SOURCE_DIR}/include")
 
 add_subdirectory(src)
 
