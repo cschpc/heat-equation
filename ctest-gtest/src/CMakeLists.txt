@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
 
-find_package(PNG REQUIRED)
 find_package(MPI REQUIRED)
 
 set(lib ${PROJECT_NAME})
@@ -38,13 +37,11 @@ target_compile_options(${objs}
 target_compile_definitions(${objs}
     PRIVATE
     ${MPI_C_COMPILE_DEFINITIONS}
-    ${PND_DEFINITIONS}
     )
 
 target_include_directories(${objs}
     SYSTEM
     PRIVATE
-    ${PNG_INCLUDE_DIRS}
     ${MPI_C_INCLUDE_DIRS}
     )
 
@@ -63,7 +60,6 @@ target_link_options(${lib}
 target_link_libraries(${lib}
     PRIVATE
     ${objs}
-    ${PNG_LIBRARIES}
     ${MPI_C_LIBRARIES}
     )
 
