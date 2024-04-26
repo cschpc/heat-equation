@@ -8,6 +8,7 @@ add_executable(
     field_tests.cpp
     integration_tests.cpp
     stencil_tests.cpp
+    utilities_tests.cpp
 )
 
 target_include_directories(${testname} PRIVATE
