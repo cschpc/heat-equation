@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <mpi.h>
+#include <stdexcept>
 #include <string>
 
 #include "matrix.hpp"
@@ -52,51 +53,61 @@ void write_field(const Field &field, const int iter,
 }
 
 // Read the initial temperature distribution from a file
-void read_field(Field &field, std::string filename,
+void read_field(Field &field, const std::string &filename,
                 const ParallelData &parallel) {
-    std::ifstream file;
-    file.open(filename);
-    // Read the header
-    std::string line, comment;
-    std::getline(file, line);
-    int nx_full, ny_full;
-    std::stringstream(line) >> comment >> nx_full >> ny_full;
+    std::stringstream err_msg;
 
-    field.setup(nx_full, ny_full, parallel);
+    std::ifstream file(filename);
+    if (file.is_open()) {
+        // Read the header
+        std::string line, comment;
+        std::getline(file, line);
+        int nx_full, ny_full;
+        std::stringstream(line) >> comment >> nx_full >> ny_full;
 
-    // Read the full array
-    auto full = Matrix<double> (nx_full, ny_full);
+        field.setup(nx_full, ny_full, parallel);
 
-    if (0 == parallel.rank) {
-        for (int i = 0; i < nx_full; i++)
-            for (int j = 0; j < ny_full; j++)
-                file >> full(i, j);
+        // Read the full array
+        auto full = Matrix<double>(nx_full, ny_full);
+
+        if (0 == parallel.rank) {
+            for (int i = 0; i < nx_full; i++)
+                for (int j = 0; j < ny_full; j++)
+                    file >> full(i, j);
+        }
+
+        // Inner region (no boundaries)
+        auto inner = Matrix<double>(field.nx, field.ny);
+
+        MPI_Scatter(full.data(), field.nx * ny_full, MPI_DOUBLE, inner.data(),
+                    field.nx * ny_full, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+        // After this, possible to pass inner and nx to field constructor
+
+        // Copy to the array containing also boundaries
+        for (int i = 0; i < field.nx; i++)
+            for (int j = 0; j < field.ny; j++)
+                field(i + 1, j + 1) = inner(i, j);
+
+        // Set the boundary values
+        for (int i = 0; i < field.nx + 2; i++) {
+            // left boundary
+            field(i, 0) = field(i, 1);
+            // right boundary
+            field(i, field.ny + 1) = field(i, field.ny);
+        }
+
+        for (int j = 0; j < field.ny + 2; j++) {
+            // top boundary
+            field.temperature(0, j) = field(1, j);
+            // bottom boundary
+            field.temperature(field.nx + 1, j) = field.temperature(field.nx, j);
+        }
+
+        return;
+    } else {
+        err_msg << "Could not open file \"" << filename << "\"";
     }
 
-    file.close();
-
-    // Inner region (no boundaries)
-    auto inner = Matrix<double> (field.nx, field.ny);
-
-    MPI_Scatter(full.data(), field.nx * ny_full, MPI_DOUBLE, inner.data(),
-                field.nx * ny_full, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    // Copy to the array containing also boundaries
-    for (int i = 0; i < field.nx; i++)
-        for (int j = 0; j < field.ny; j++)
-             field(i + 1, j + 1) = inner(i, j);
-
-    // Set the boundary values
-    for (int i = 0; i < field.nx + 2; i++) {
-        // left boundary
-        field(i, 0) = field(i, 1);
-        // right boundary
-        field(i, field.ny + 1) = field(i, field.ny);
-    }
-    for (int j = 0; j < field.ny + 2; j++) {
-        // top boundary
-        field.temperature(0, j) = field(1, j);
-        // bottom boundary
-        field.temperature(field.nx + 1, j) = field.temperature(field.nx, j);
-    }
+    throw std::runtime_error(err_msg.str());
 }
