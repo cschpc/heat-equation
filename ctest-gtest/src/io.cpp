@@ -5,9 +5,10 @@
 #include <iterator>
 #include <mpi.h>
 #include <stdexcept>
-#include <string>
+#include <tuple>
 
 #include "field.hpp"
+#include "io.hpp"
 #include "matrix.hpp"
 #include "parallel.hpp"
 #include "pngwriter.h"
@@ -57,72 +58,78 @@ void write_field(const Field &field, const int iter,
 // Read the initial temperature distribution from a file
 void read_field(Field &field, const std::string &filename,
                 const ParallelData &parallel) {
-    std::stringstream err_msg;
+    auto [num_rows_global, num_cols_global, full_data] =
+        heat::read_field(filename, parallel.rank);
+    const auto [num_rows, num_cols] = Field::partition_domain(
+        num_rows_global, num_cols_global, parallel.size);
+    const auto num_values_per_rank = num_rows * num_cols;
 
-    std::ifstream file(filename);
-    if (file.is_open()) {
-        // Read the header
-        std::string line;
-        std::getline(file, line);
+    std::vector<double> my_data(num_values_per_rank);
+    MPI_Scatter(full_data.data(), num_values_per_rank, MPI_DOUBLE,
+                my_data.data(), num_values_per_rank, MPI_DOUBLE, 0,
+                MPI_COMM_WORLD);
 
-        std::string comment;
-        int num_rows_global = 0;
-        int num_cols_global = 0;
-        std::stringstream(line) >> comment >> num_rows_global >>
-            num_cols_global;
+    // After this, possible to pass inner and num_rows to field constructor
+    // So this could return num_rows, num_cols and my_data
+    field.setup(num_rows_global, num_cols_global, parallel);
 
-        // Read data to a vector
-        std::vector<double> full_data;
-        if (0 == parallel.rank) {
-            std::istream_iterator<double> start(file);
-            std::istream_iterator<double> end;
-            full_data = std::vector<double>(start, end);
+    // Copy to the array containing also boundaries
+    for (int i = 0; i < field.num_rows; i++) {
+        for (int j = 0; j < field.num_cols; j++) {
+            field(i + 1, j + 1) = my_data[i * field.num_cols + j];
         }
-
-        const auto [num_rows, num_cols] = Field::partition_domain(
-            num_rows_global, num_cols_global, parallel.size);
-        const auto num_values_per_rank = num_rows * num_cols;
-
-        std::vector<double> my_data(num_values_per_rank);
-        MPI_Scatter(full_data.data(), num_values_per_rank, MPI_DOUBLE,
-                    my_data.data(), num_values_per_rank, MPI_DOUBLE, 0,
-                    MPI_COMM_WORLD);
-
-        // After this, possible to pass inner and num_rows to field constructor
-        // So this could return num_rows, num_cols and my_data
-        field.setup(num_rows_global, num_cols_global, parallel);
-
-        // Copy to the array containing also boundaries
-        for (int i = 0; i < field.num_rows; i++)
-            for (int j = 0; j < field.num_cols; j++)
-                field(i + 1, j + 1) = my_data[i * field.num_cols + j];
-
-        // Set the boundary values
-        for (int i = 0; i < field.num_rows + 2; i++) {
-            // left boundary
-            field(i, 0) = field(i, 1);
-            // right boundary
-            field(i, field.num_cols + 1) = field(i, field.num_cols);
-        }
-
-        // top boundary
-        if (0 == parallel.rank) {
-            for (int j = 0; j < field.num_cols + 2; j++) {
-                field(0, j) = field(1, j);
-            }
-        }
-
-        // bottom boundary
-        if (parallel.rank == parallel.size - 1) {
-            for (int j = 0; j < field.num_cols + 2; j++) {
-                field(field.num_rows + 1, j) = field(field.num_rows, j);
-            }
-        }
-
-        return;
-    } else {
-        err_msg << "Could not open file \"" << filename << "\"";
     }
 
-    throw std::runtime_error(err_msg.str());
+    // Set the boundary values
+    for (int i = 0; i < field.num_rows + 2; i++) {
+        // left boundary
+        field(i, 0) = field(i, 1);
+        // right boundary
+        field(i, field.num_cols + 1) = field(i, field.num_cols);
+    }
+
+    // top boundary
+    if (0 == parallel.rank) {
+        for (int j = 0; j < field.num_cols + 2; j++) {
+            field(0, j) = field(1, j);
+        }
+    }
+
+    // bottom boundary
+    if (parallel.rank == parallel.size - 1) {
+        for (int j = 0; j < field.num_cols + 2; j++) {
+            field(field.num_rows + 1, j) = field(field.num_rows, j);
+        }
+    }
 }
+
+namespace heat {
+std::tuple<int, int, std::vector<double>>
+read_field(const std::string &filename, int rank) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::stringstream err_msg;
+        err_msg << "Could not open file \"" << filename << "\"";
+        throw std::runtime_error(err_msg.str());
+    }
+
+    // Read the header
+    std::string line;
+    std::getline(file, line);
+
+    std::string comment;
+    int num_rows = 0;
+    int num_cols = 0;
+    std::stringstream(line) >> comment >> num_rows >> num_cols;
+
+    // Read data to a vector
+    std::vector<double> full_data;
+    if (0 == rank) {
+        std::istream_iterator<double> start(file);
+        std::istream_iterator<double> end;
+        full_data = std::vector<double>(start, end);
+    }
+
+    return std::make_tuple(num_rows, num_cols, full_data);
+}
+} // namespace heat

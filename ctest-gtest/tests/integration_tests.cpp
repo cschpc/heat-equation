@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "input.hpp"
+#include "io.hpp"
 #include "pngwriter.h"
 
 namespace heat {
@@ -75,4 +76,22 @@ TEST(integration_test, input_from_file_ok) {
     const heat::Input input = heat::read_input("testdata/input.json");
     const heat::Input default_input = {};
     ASSERT_NE(input, default_input) << "input is equal to default_input";
+}
+
+TEST(integration_test, read_field_data_from_file_rank_0) {
+    constexpr int rank = 0;
+    auto [num_rows, num_cols, data] =
+        heat::read_field("testdata/bottle.dat", rank);
+    ASSERT_EQ(data.size(), 40000);
+    ASSERT_EQ(num_rows * num_cols, data.size());
+    ASSERT_GT(data.size(), 0) << "data vector should contain some data";
+}
+
+TEST(integration_test, read_field_data_from_file_rank_1) {
+    constexpr int rank = 1;
+    auto [num_rows, num_cols, data] =
+        heat::read_field("testdata/bottle.dat", rank);
+    ASSERT_EQ(num_rows, 200);
+    ASSERT_EQ(num_cols, 200);
+    ASSERT_TRUE(data.empty()) << "data vector should be empty";
 }
