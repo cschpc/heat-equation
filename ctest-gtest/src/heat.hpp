@@ -17,12 +17,13 @@ struct ParallelData {
 
 // Class for temperature field
 struct Field {
-    // nx and ny are the true dimensions of the field. The temperature matrix
-    // contains also ghost layers, so it will have dimensions nx+2 x ny+2 
-    int nx;                     // Local dimensions of the field
-    int ny;
-    int nx_full;                // Global dimensions of the field
-    int ny_full;                // Global dimensions of the field
+    // num_rows and num_cols are the true dimensions of the field. The
+    // temperature matrix contains also ghost layers, so it will have dimensions
+    // num_rows+2 x num_cols+2
+    int num_rows; // Local dimensions of the field
+    int num_cols;
+    int num_rows_global;        // Global dimensions of the field
+    int num_cols_global;        // Global dimensions of the field
 
     // Grid spacing
     static constexpr double dx = 0.01;
@@ -34,7 +35,7 @@ struct Field {
 
     Matrix<double> temperature;
 
-    void setup(int nx_in, int ny_in, const ParallelData &parallel);
+    void setup(int num_rows_in, int num_cols_in, const ParallelData &parallel);
     void generate(const ParallelData &parallel);
     // standard (i,j) syntax for setting elements
     double& operator()(int i, int j) {return temperature(i, j);}

@@ -6,25 +6,27 @@
 #include <stdexcept>
 #include <utility>
 
-void Field::setup(int nx_in, int ny_in, const ParallelData &parallel) {
-    const auto [x, y] = Field::partition_domain(nx_in, ny_in, parallel.size);
-    nx_full = nx_in;
-    ny_full = ny_in;
-    nx = x;
-    ny = y;
+void Field::setup(int num_rows_in, int num_cols_in,
+                  const ParallelData &parallel) {
+    const auto [nr, nc] =
+        Field::partition_domain(num_rows_in, num_cols_in, parallel.size);
+    num_rows_global = num_rows_in;
+    num_cols_global = num_cols_in;
+    num_rows = nr;
+    num_cols = nc;
     // matrix includes also ghost layers
-    temperature = Matrix<double>(nx + 2, ny + 2);
+    temperature = Matrix<double>(num_rows + 2, num_cols + 2);
 }
 
 void Field::generate(const ParallelData &parallel) {
 
-    // Radius of the source disc 
-    auto radius = nx_full / 6.0;
-    for (int i = 0; i < nx + 2; i++) {
-        for (int j = 0; j < ny + 2; j++) {
-            // Distance of point i, j from the origin 
-            auto dx = i + parallel.rank * nx - nx_full / 2 + 1;
-            auto dy = j - ny / 2 + 1;
+    // Radius of the source disc
+    auto radius = num_rows_global / 6.0;
+    for (int i = 0; i < num_rows + 2; i++) {
+        for (int j = 0; j < num_cols + 2; j++) {
+            // Distance of point i, j from the origin
+            auto dx = i + parallel.rank * num_rows - num_rows_global / 2 + 1;
+            auto dy = j - num_cols / 2 + 1;
             if (dx * dx + dy * dy < radius * radius) {
                 temperature(i, j) = 5.0;
             } else {
@@ -34,38 +36,38 @@ void Field::generate(const ParallelData &parallel) {
     }
 
     // Boundary conditions
-    for (int i = 0; i < nx + 2; i++) {
+    for (int i = 0; i < num_rows + 2; i++) {
         // Left
         temperature(i, 0) = 20.0;
         // Right
-        temperature(i, ny + 1) = 70.0;
+        temperature(i, num_cols + 1) = 70.0;
     }
 
     // Top
     if (0 == parallel.rank) {
-        for (int j = 0; j < ny + 2; j++) {
+        for (int j = 0; j < num_cols + 2; j++) {
             temperature(0, j) = 85.0;
         }
     }
     // Bottom
     if (parallel.rank == parallel.size - 1) {
-        for (int j = 0; j < ny + 2; j++) {
-            temperature(nx + 1, j) = 5.0;
+        for (int j = 0; j < num_cols + 2; j++) {
+            temperature(num_rows + 1, j) = 5.0;
         }
     }
 }
 
-std::pair<int, int> Field::partition_domain(int width, int height,
+std::pair<int, int> Field::partition_domain(int num_rows, int num_cols,
                                             int num_partitions) {
-    const int partial_width = width / num_partitions;
-    if (partial_width * num_partitions != width) {
+    const int nr = num_rows / num_partitions;
+    if (nr * num_partitions != num_rows) {
         std::stringstream ss;
-        ss << "Could not partition width (" << width << ") and height ("
-           << height << ") evenly to " << num_partitions << " partitions";
+        ss << "Could not partition " << num_rows << " rows and " << num_cols
+           << " columns evenly to " << num_partitions << " partitions";
         throw std::runtime_error(ss.str());
     }
-    // Height is not partitioned
-    const int partial_height = height;
+    // Columns are not partitioned
+    const int nc = num_cols;
 
-    return std::make_pair(partial_width, partial_height);
+    return std::make_pair(nr, nc);
 }

@@ -11,13 +11,13 @@ double average(const Field& field)
      double local_average = 0.0;
      double average = 0.0;
 
-     for (int i = 1; i < field.nx + 1; i++) {
-       for (int j = 1; j < field.ny + 1; j++) {
-         local_average += field.temperature(i, j);
-       }
+     for (int i = 1; i < field.num_rows + 1; i++) {
+         for (int j = 1; j < field.num_cols + 1; j++) {
+             local_average += field.temperature(i, j);
+         }
      }
 
      MPI_Allreduce(&local_average, &average, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-     average /= (field.nx_full * field.ny_full);
+     average /= (field.num_rows_global * field.num_cols_global);
      return average;
 }
