@@ -24,29 +24,30 @@ private:
     // Internal 1D indexing
     const int indx(int i, int j) const {
         //assert that indices are reasonable
-        assert(i >= 0 && i <  nx);
-        assert(j >= 0 && j <  ny);
+        assert(i >= 0 && i < num_rows);
+        assert(j >= 0 && j < num_cols);
 
-        return i * ny + j;
+        return i * num_cols + j;
     }
 
 public:
 
     // matrix dimensions
-    int nx, ny;
+  int num_rows = 0;
+  int num_cols = 0;
 
-    // Default constructor
-    Matrix() = default;
-    // Allocate at the time of construction
-    Matrix(int nx, int ny) : nx(nx), ny(ny) {
-        _data.resize(nx * ny);
-    };
+  // Default constructor
+  Matrix() = default;
+  // Allocate at the time of construction
+  Matrix(int num_rows, int num_cols) : num_rows(num_rows), num_cols(num_cols) {
+      _data.resize(num_rows * num_cols);
+  };
 
-    void allocate(int nx_in, int ny_in) {
-        nx = nx_in;
-        ny = ny_in;
-        _data.resize(nx * ny);
-    };
+  void allocate(int nr, int nc) {
+      num_rows = nr;
+      num_cols = nc;
+      _data.resize(num_rows * num_cols);
+  };
 
     // standard (i,j) syntax for setting elements
     T& operator()(int i, int j) {
@@ -59,6 +60,5 @@ public:
     }
 
     // provide possibility to get raw pointer for data at index (i,j) (needed for MPI)
-    T* data(int i=0, int j=0) {return _data.data() + i * ny + j;}
-
+    T *data(int i = 0, int j = 0) { return _data.data() + i * num_cols + j; }
 };
