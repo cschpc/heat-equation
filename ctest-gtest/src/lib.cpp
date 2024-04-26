@@ -28,7 +28,7 @@ void run(int argc, char **argv) {
     // Output the initial field
     write_field(current, 0, parallelization);
 
-    auto avg = average(current);
+    auto avg = average(current, parallelization);
     if (0 == parallelization.rank) {
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "Average temperature at start: " << avg << std::endl;
@@ -60,9 +60,9 @@ void run(int argc, char **argv) {
     }
 
     const auto stop_clock = MPI_Wtime();
-    constexpr double ref_val = 59.281239;
+    constexpr double ref_val = 59.075405;
 
-    avg = average(previous);
+    avg = average(previous, parallelization);
     if (0 == parallelization.rank) {
         std::cout << "Iteration took " << (stop_clock - start_clock)
                   << " seconds." << std::endl;

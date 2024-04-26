@@ -59,7 +59,7 @@ void write_field(const Field &field, const int iter,
 void read_field(Field &field, const std::string &filename,
                 const ParallelData &parallel);
 
-double average(const Field& field);
+double average(const Field &field, const ParallelData &parallel);
 
 namespace heat {
 double stencil(int i, int j, const Field &field, double a, double dt);

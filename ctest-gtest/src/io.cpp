@@ -104,12 +104,18 @@ void read_field(Field &field, const std::string &filename,
             field(i, field.num_cols + 1) = field(i, field.num_cols);
         }
 
-        for (int j = 0; j < field.num_cols + 2; j++) {
-            // top boundary
-            field.temperature(0, j) = field(1, j);
-            // bottom boundary
-            field.temperature(field.num_rows + 1, j) =
-                field.temperature(field.num_rows, j);
+        // top boundary
+        if (0 == parallel.rank) {
+            for (int j = 0; j < field.num_cols + 2; j++) {
+                field(0, j) = field(1, j);
+            }
+        }
+
+        // bottom boundary
+        if (parallel.rank == parallel.size - 1) {
+            for (int j = 0; j < field.num_cols + 2; j++) {
+                field(field.num_rows + 1, j) = field(field.num_rows, j);
+            }
         }
 
         return;
