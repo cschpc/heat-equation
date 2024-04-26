@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <iterator>
 #include <mpi.h>
 #include <stdexcept>
 #include <string>
@@ -60,34 +61,37 @@ void read_field(Field &field, const std::string &filename,
     std::ifstream file(filename);
     if (file.is_open()) {
         // Read the header
-        std::string line, comment;
+        std::string line;
         std::getline(file, line);
+
+        std::string comment;
         int nx_full, ny_full;
         std::stringstream(line) >> comment >> nx_full >> ny_full;
 
-        field.setup(nx_full, ny_full, parallel);
-
-        // Read the full array
-        auto full = Matrix<double>(nx_full, ny_full);
-
+        // Read data to a vector
+        std::vector<double> full_data;
         if (0 == parallel.rank) {
-            for (int i = 0; i < nx_full; i++)
-                for (int j = 0; j < ny_full; j++)
-                    file >> full(i, j);
+            std::istream_iterator<double> start(file);
+            std::istream_iterator<double> end;
+            full_data = std::vector<double>(start, end);
         }
 
-        // Inner region (no boundaries)
-        auto inner = Matrix<double>(field.nx, field.ny);
+        // Defer this to later, but need to get correctly computed field.nx & ny
+        // from somewhere
+        field.setup(nx_full, ny_full, parallel);
 
-        MPI_Scatter(full.data(), field.nx * ny_full, MPI_DOUBLE, inner.data(),
-                    field.nx * ny_full, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        std::vector<double> my_data(field.nx * field.ny);
+        MPI_Scatter(full_data.data(), field.nx * ny_full, MPI_DOUBLE,
+                    my_data.data(), field.nx * ny_full, MPI_DOUBLE, 0,
+                    MPI_COMM_WORLD);
 
         // After this, possible to pass inner and nx to field constructor
+        // So this could return nx, ny and my_data
 
         // Copy to the array containing also boundaries
         for (int i = 0; i < field.nx; i++)
             for (int j = 0; j < field.ny; j++)
-                field(i + 1, j + 1) = inner(i, j);
+                field(i + 1, j + 1) = my_data[i * field.ny + j];
 
         // Set the boundary values
         for (int i = 0; i < field.nx + 2; i++) {
