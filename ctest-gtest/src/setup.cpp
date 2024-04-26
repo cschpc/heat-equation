@@ -3,19 +3,16 @@
 #include <iostream>
 #include <string>
 
-void initialize(const heat::Input &input, Field &current, Field &previous,
-                const ParallelData &parallel) {
+Field initialize(const heat::Input &input, const ParallelData &parallel) {
+    Field field = {};
     if (input.read_file) {
         if (0 == parallel.rank)
             std::cout << "Reading input from " + input.fname << std::endl;
-        read_field(current, input.fname, parallel);
+        read_field(field, input.fname, parallel);
     } else {
-        current.setup(input.rows, input.cols, parallel);
-        current.generate(parallel);
+        field.setup(input.rows, input.cols, parallel);
+        field.generate(parallel);
     }
-
-    // copy "current" field also to "previous"
-    previous = current;
 
     if (0 == parallel.rank) {
         std::cout << "Simulation parameters: "
@@ -23,4 +20,5 @@ void initialize(const heat::Input &input, Field &current, Field &previous,
                   << " time steps: " << input.nsteps << std::endl;
         std::cout << "Number of MPI tasks: " << parallel.size << std::endl;
     }
+    return field;
 }

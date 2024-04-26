@@ -47,8 +47,7 @@ struct Field {
 };
 
 // Function declarations
-void initialize(const heat::Input &input, Field &current, Field &previous,
-                const ParallelData &parallel);
+Field initialize(const heat::Input &input, const ParallelData &parallel);
 
 void exchange(Field &field, const ParallelData &parallel);
 

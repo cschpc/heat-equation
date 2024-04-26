@@ -22,9 +22,8 @@ void run(int argc, char **argv) {
     const Input input = read_input(fname.c_str());
 
     // Temperature fields
-    Field current = {};
-    Field previous = {};
-    initialize(input, current, previous, parallelization);
+    Field current = initialize(input, parallelization);
+    Field previous = current;
 
     // Output the initial field
     write_field(current, 0, parallelization);
