@@ -7,8 +7,9 @@
 #include <stdexcept>
 #include <string>
 
+#include "field.hpp"
 #include "matrix.hpp"
-#include "heat.hpp"
+#include "parallel.hpp"
 #include "pngwriter.h"
 
 // Write a picture of the temperature field

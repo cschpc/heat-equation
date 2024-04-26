@@ -1,4 +1,4 @@
-#include "heat.hpp"
+#include "parallel.hpp"
 #include <mpi.h>
 
 ParallelData::ParallelData() {

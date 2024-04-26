@@ -1,4 +1,5 @@
 #include "heat.hpp"
+#include "parallel.hpp"
 #include <gtest/gtest.h>
 
 TEST(stencil_test, zero_field_gives_zero) {

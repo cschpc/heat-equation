@@ -14,7 +14,7 @@ target_sources(
     ${objs}
     PRIVATE
     core.cpp
-    heat.cpp
+    field.cpp
     input.cpp
     io.cpp
     lib.cpp

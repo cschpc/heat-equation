@@ -2,7 +2,8 @@
 
 #include <mpi.h>
 
-#include "heat.hpp"
+#include "field.hpp"
+#include "parallel.hpp"
 
 // Exchange the boundary values
 void exchange(Field &field, const ParallelData &parallel) {

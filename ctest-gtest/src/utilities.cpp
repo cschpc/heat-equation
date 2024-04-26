@@ -3,7 +3,8 @@
 
 #include <mpi.h>
 
-#include "heat.hpp"
+#include "field.hpp"
+#include "parallel.hpp"
 
 // Calculate average temperature
 double average(const Field &field, const ParallelData &parallel) {

@@ -4,8 +4,10 @@
 #include <iostream>
 #include <mpi.h>
 
+#include "field.hpp"
 #include "heat.hpp"
 #include "input.hpp"
+#include "parallel.hpp"
 
 namespace heat{
 void run(int argc, char **argv) {

@@ -1,7 +1,8 @@
+#include "field.hpp"
 #include "heat.hpp"
 #include "input.hpp"
+#include "parallel.hpp"
 #include <iostream>
-#include <string>
 
 Field initialize(const heat::Input &input, const ParallelData &parallel) {
     Field field = {};
