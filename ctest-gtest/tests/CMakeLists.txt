@@ -5,8 +5,9 @@ set(testdata testdata)
 
 add_executable(
     ${testname}
-    stencil_tests.cpp
+    field_tests.cpp
     integration_tests.cpp
+    stencil_tests.cpp
 )
 
 target_include_directories(${testname} PRIVATE

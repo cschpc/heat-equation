@@ -65,7 +65,8 @@ void read_field(Field &field, const std::string &filename,
         std::getline(file, line);
 
         std::string comment;
-        int nx_full, ny_full;
+        int nx_full = 0;
+        int ny_full = 0;
         std::stringstream(line) >> comment >> nx_full >> ny_full;
 
         // Read data to a vector
@@ -76,17 +77,18 @@ void read_field(Field &field, const std::string &filename,
             full_data = std::vector<double>(start, end);
         }
 
-        // Defer this to later, but need to get correctly computed field.nx & ny
-        // from somewhere
-        field.setup(nx_full, ny_full, parallel);
+        const auto [nx, ny] =
+            Field::partition_domain(nx_full, ny_full, parallel.size);
+        const auto num_values_per_rank = nx * ny;
 
-        std::vector<double> my_data(field.nx * field.ny);
-        MPI_Scatter(full_data.data(), field.nx * ny_full, MPI_DOUBLE,
-                    my_data.data(), field.nx * ny_full, MPI_DOUBLE, 0,
+        std::vector<double> my_data(num_values_per_rank);
+        MPI_Scatter(full_data.data(), num_values_per_rank, MPI_DOUBLE,
+                    my_data.data(), num_values_per_rank, MPI_DOUBLE, 0,
                     MPI_COMM_WORLD);
 
         // After this, possible to pass inner and nx to field constructor
         // So this could return nx, ny and my_data
+        field.setup(nx_full, ny_full, parallel);
 
         // Copy to the array containing also boundaries
         for (int i = 0; i < field.nx; i++)

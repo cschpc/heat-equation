@@ -2,18 +2,16 @@
 #include "matrix.hpp"
 #include <iostream>
 #include <mpi.h>
+#include <sstream>
+#include <stdexcept>
+#include <utility>
 
 void Field::setup(int nx_in, int ny_in, const ParallelData &parallel) {
+    const auto [x, y] = Field::partition_domain(nx_in, ny_in, parallel.size);
     nx_full = nx_in;
     ny_full = ny_in;
-
-    nx = nx_full / parallel.size;
-    if (nx * parallel.size != nx_full) {
-        std::cout << "Cannot divide grid evenly to processors" << std::endl;
-        MPI_Abort(MPI_COMM_WORLD, -2);
-    }
-    ny = ny_full;
-
+    nx = x;
+    ny = y;
     // matrix includes also ghost layers
     temperature = Matrix<double>(nx + 2, ny + 2);
 }
@@ -55,4 +53,19 @@ void Field::generate(const ParallelData &parallel) {
             temperature(nx + 1, j) = 5.0;
         }
     }
+}
+
+std::pair<int, int> Field::partition_domain(int width, int height,
+                                            int num_partitions) {
+    const int partial_width = width / num_partitions;
+    if (partial_width * num_partitions != width) {
+        std::stringstream ss;
+        ss << "Could not partition width (" << width << ") and height ("
+           << height << ") evenly to " << num_partitions << " partitions";
+        throw std::runtime_error(ss.str());
+    }
+    // Height is not partitioned
+    const int partial_height = height;
+
+    return std::make_pair(partial_width, partial_height);
 }

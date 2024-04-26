@@ -35,15 +35,14 @@ struct Field {
     Matrix<double> temperature;
 
     void setup(int nx_in, int ny_in, const ParallelData &parallel);
-
     void generate(const ParallelData &parallel);
-
     // standard (i,j) syntax for setting elements
     double& operator()(int i, int j) {return temperature(i, j);}
-
     // standard (i,j) syntax for getting elements
     const double& operator()(int i, int j) const {return temperature(i, j);}
 
+    static std::pair<int, int> partition_domain(int width, int height,
+                                                int num_partitions);
 };
 
 // Function declarations
