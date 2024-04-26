@@ -1,4 +1,4 @@
-#include "heat.hpp"
+#include "field.hpp"
 #include <gtest/gtest.h>
 
 TEST(field_test, domain_partition_succeeds) {

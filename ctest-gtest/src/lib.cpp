@@ -9,6 +9,7 @@
 #include "input.hpp"
 #include "io.hpp"
 #include "parallel.hpp"
+#include "utilities.hpp"
 
 namespace heat{
 void run(int argc, char **argv) {
@@ -31,7 +32,7 @@ void run(int argc, char **argv) {
     // Output the initial field
     write_field(current, 0, parallelization);
 
-    auto avg = average(current, parallelization);
+    auto avg = heat::average(current, parallelization);
     if (0 == parallelization.rank) {
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "Average temperature at start: " << avg << std::endl;
@@ -65,7 +66,7 @@ void run(int argc, char **argv) {
     const auto stop_clock = MPI_Wtime();
     constexpr double ref_val = 59.075405;
 
-    avg = average(previous, parallelization);
+    avg = heat::average(previous, parallelization);
     if (0 == parallelization.rank) {
         std::cout << "Iteration took " << (stop_clock - start_clock)
                   << " seconds." << std::endl;

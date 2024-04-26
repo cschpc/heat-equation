@@ -1,3 +1,4 @@
+#include "field.hpp"
 #include "heat.hpp"
 #include "parallel.hpp"
 #include <gtest/gtest.h>

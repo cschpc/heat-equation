@@ -5,7 +5,9 @@
 
 #include "field.hpp"
 #include "parallel.hpp"
+#include "utilities.hpp"
 
+namespace heat {
 // Calculate average temperature
 double average(const Field &field, const ParallelData &parallel) {
     double local_average = 0.0;
@@ -22,3 +24,4 @@ double average(const Field &field, const ParallelData &parallel) {
     average /= (field.num_rows * field.num_cols * parallel.size);
     return average;
 }
+} // namespace heat
