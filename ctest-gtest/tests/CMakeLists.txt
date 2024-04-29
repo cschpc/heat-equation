@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
+find_package(MPI REQUIRED)
+
 set(testname ${PROJECT_NAME}_tests)
 set(testdata testdata)
 
@@ -19,6 +21,7 @@ target_include_directories(${testname} PRIVATE
 target_include_directories(${testname} SYSTEM PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/googletest-1.14.0/googletest/include"
     "${CMAKE_SOURCE_DIR}/include"
+    ${MPI_C_INCLUDE_DIRS}
     )
 
 target_link_libraries(

@@ -33,8 +33,8 @@ std::vector<double> generate_field(int num_rows, int num_cols) {
         for (int j = 0; j < num_cols; j++) {
             const auto index = i * num_cols + j;
             // Distance of point i, j from the origin
-            const auto dx = i - num_rows / 2 + 1;
-            const auto dy = j - num_cols / 2 + 1;
+            const auto dx = i - num_rows / 2 + 2;
+            const auto dy = j - num_cols / 2 + 2;
             data[index] = dx * dx + dy * dy < radius * radius ? 5.0 : 65.0;
         }
     }
