@@ -42,7 +42,8 @@ TEST(field_test, generation_correct) {
     field.setup(num_rows, num_cols, parallel);
     field.generate(parallel);
 
-    std::vector<double> field_data = heat::generate_field(num_rows, num_cols);
+    std::vector<double> field_data =
+        heat::generate_field(num_rows, num_cols, 0);
     save_png(field_data.data(), num_rows, num_cols, "field_data.png", 'c');
     for (int i = 0; i < num_rows; i++) {
         for (int j = 0; j < num_cols; j++) {

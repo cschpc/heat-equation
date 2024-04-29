@@ -5,7 +5,8 @@
 TEST(utilities_test, data_generated_correctly) {
     constexpr int num_rows = 2000;
     constexpr int num_cols = 2000;
-    const std::vector<double> data = heat::generate_field(num_rows, num_cols);
+    const std::vector<double> data =
+        heat::generate_field(num_rows, num_cols, 0);
 
     ASSERT_EQ(num_rows * num_cols, data.size());
 
