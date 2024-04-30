@@ -15,7 +15,6 @@ target_sources(
     PRIVATE
     core.cpp
     field.cpp
-    input.cpp
     io.cpp
     lib.cpp
     parallel.cpp

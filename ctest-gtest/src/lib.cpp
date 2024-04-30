@@ -6,7 +6,6 @@
 
 #include "field.hpp"
 #include "heat.hpp"
-#include "input.hpp"
 #include "io.hpp"
 #include "parallel.hpp"
 #include "utilities.hpp"
@@ -23,7 +22,7 @@ void run(int argc, char **argv) {
     if (argc > 1) {
         fname = argv[1];
     }
-    const Input input = read_input(fname.c_str());
+    const Input input = read_input(fname.c_str(), parallelization.rank);
 
     // Temperature fields
     Field current = initialize(input, parallelization);

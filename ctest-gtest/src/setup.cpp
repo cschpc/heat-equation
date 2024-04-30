@@ -1,5 +1,4 @@
 #include "field.hpp"
-#include "input.hpp"
 #include "io.hpp"
 #include "parallel.hpp"
 #include <iostream>

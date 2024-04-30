@@ -1,9 +1,13 @@
 /* I/O related functions for heat equation solver */
 
+#include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <iterator>
 #include <mpi.h>
+#include <sstream>
 #include <stdexcept>
 #include <tuple>
 
@@ -89,7 +93,7 @@ void read_field(Field &field, const std::string &filename,
     // Set the boundary values
     for (int i = -1; i < field.num_rows + 1; i++) {
         // left boundary
-        field(i, 0) = field(i, 1);
+        field(i, -1) = field(i, 0);
         // right boundary
         field(i, field.num_cols) = field(i, field.num_cols - 1);
     }
@@ -137,5 +141,56 @@ read_field(const std::string &filename, int rank) {
     }
 
     return std::make_tuple(num_rows, num_cols, full_data);
+}
+
+void to_json(nlohmann::json &j, const Input &from) {
+    j = nlohmann::json{
+        {"rows", from.rows},           {"cols", from.cols},
+        {"nsteps", from.nsteps},       {"image_interval", from.image_interval},
+        {"read_file", from.read_file}, {"fname", from.fname},
+    };
+}
+
+void from_json(const nlohmann::json &j, Input &to) {
+    j.at("rows").get_to(to.rows);
+    j.at("cols").get_to(to.cols);
+    j.at("nsteps").get_to(to.nsteps);
+    j.at("image_interval").get_to(to.image_interval);
+    j.at("read_file").get_to(to.read_file);
+    j.at("fname").get_to(to.fname);
+}
+
+Input read_input(const char *fname, int rank) {
+    std::stringstream ess;
+    if (fname == nullptr) {
+        ess << "Filename is a nullptr";
+        throw std::runtime_error(ess.str());
+    }
+
+    if (strlen(fname) == 0) {
+        if (rank == 0) {
+            std::cout << "Using default input" << std::endl;
+        }
+        return Input{};
+    }
+
+    const auto path = std::filesystem::path(fname);
+    if (not std::filesystem::exists(path)) {
+        ess << "Non-existent path: " << path;
+        throw std::runtime_error(ess.str());
+    }
+
+    std::fstream file(path, std::ios::in);
+    if (not file.is_open()) {
+        ess << "Could not open file at " << path;
+        throw std::runtime_error(ess.str());
+    }
+
+    if (rank == 0) {
+        std::cout << "Reading input from " << path << std::endl;
+    }
+    nlohmann::json j;
+    file >> j;
+    return j.get<Input>();
 }
 } // namespace heat
