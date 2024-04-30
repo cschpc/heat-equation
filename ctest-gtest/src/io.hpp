@@ -1,5 +1,5 @@
 #pragma once
-#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include <string>
 #include <tuple>
 #include <vector>
@@ -42,5 +42,5 @@ struct Input {
 
 void to_json(nlohmann::json &j, const Input &from);
 void from_json(const nlohmann::json &j, Input &to);
-Input read_input(const char *fname, int rank);
+Input read_input(std::string &&fname, int rank);
 }

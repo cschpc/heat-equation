@@ -4,5 +4,5 @@
     "nsteps": 2000,
     "image_interval": 500,
     "read_file": true,
-    "fname": "bottle.dat"
+    "fname": "testdata/bottle.dat"
 }

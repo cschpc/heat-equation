@@ -52,6 +52,19 @@ target_include_directories(${objs}
     ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
+target_include_directories(${binary}
+    SYSTEM
+    PRIVATE
+    ${MPI_C_INCLUDE_DIRS}
+    ${dependencies}
+    )
+
+target_include_directories(${binary}
+    PRIVATE
+    ${common_dir}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
 target_link_options(${lib}
     PRIVATE
     ${MPI_C_LINK_FLAGS}
@@ -73,4 +86,5 @@ install(
     RUNTIME DESTINATION ${install_dir}/bin
     PUBLIC_HEADER DESTINATION ${install_dir}/include
     )
-install(FILES "${common_dir}/bottle.dat" DESTINATION ${install_dir}/bin)
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/tests/testdata" DESTINATION ${install_dir}/bin)

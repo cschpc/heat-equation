@@ -11,18 +11,10 @@
 #include "utilities.hpp"
 
 namespace heat{
-void run(int argc, char **argv) {
-    MPI_Init(&argc, &argv);
-
+void run(std::string &&fname) {
     // Parallelization info
     ParallelData parallelization;
-
-    // Read input from file
-    std::string fname = "";
-    if (argc > 1) {
-        fname = argv[1];
-    }
-    const Input input = read_input(fname.c_str(), parallelization.rank);
+    const Input input = read_input(std::move(fname), parallelization.rank);
 
     // Temperature fields
     Field current = initialize(input, parallelization);
@@ -71,7 +63,7 @@ void run(int argc, char **argv) {
                   << " seconds." << std::endl;
         std::cout << "Average temperature: " << avg << std::endl;
 
-        if (1 == argc) {
+        if (not input.read_file) {
             std::cout << "Reference value with default arguments: " << ref_val
                       << std::endl;
         }
@@ -79,7 +71,5 @@ void run(int argc, char **argv) {
 
     // Output the final field
     write_field(previous, input.nsteps, parallelization);
-
-    MPI_Finalize();
 }
 }

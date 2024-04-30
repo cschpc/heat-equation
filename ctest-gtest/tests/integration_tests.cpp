@@ -1,12 +1,14 @@
 #include <cstdint>
 #include <filesystem>
 #include <gtest/gtest.h>
+#include <mpi.h>
 
 #include "io.hpp"
+#include "parallel.hpp"
 #include "pngwriter.h"
 
 namespace heat {
-void run(int, char **);
+void run(std::string &&);
 }
 
 struct PngData {
@@ -40,8 +42,10 @@ bool loadPng(const char *fname, PngData &png) {
 }
 
 TEST(integration_test, image_matches_reference) {
-    char *argv[] = {};
-    heat::run(1, argv);
+    int argc = 1;
+    char **argv = NULL;
+    MPI_Init(&argc, &argv);
+    heat::run("testdata/input.json");
 
     PngData reference_data = {};
     ASSERT_TRUE(loadPng("testdata/heat_0500.png", reference_data))
@@ -63,6 +67,8 @@ TEST(integration_test, image_matches_reference) {
             << "\nReference: " << reference_data.data[i]
             << ", computed: " << computed_data.data[i];
     }
+
+    MPI_Finalize();
 }
 
 TEST(integration_test, default_input_ok) {
@@ -75,19 +81,6 @@ TEST(integration_test, input_from_file_ok) {
     const heat::Input input = heat::read_input("testdata/input.json", 0);
     const heat::Input default_input = {};
     ASSERT_NE(input, default_input) << "input is equal to default_input";
-}
-
-TEST(integration_test, input_from_nullptr_throws_exception) {
-    EXPECT_THROW(
-        {
-            try {
-                const heat::Input input = heat::read_input(nullptr, 0);
-            } catch (const std::runtime_error &e) {
-                EXPECT_STREQ("Filename is a nullptr", e.what());
-                throw;
-            }
-        },
-        std::runtime_error);
 }
 
 TEST(integration_test, input_from_nonexistent_path_throws_exception) {

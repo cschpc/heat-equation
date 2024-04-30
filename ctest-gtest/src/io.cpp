@@ -14,6 +14,7 @@
 #include "field.hpp"
 #include "io.hpp"
 #include "matrix.hpp"
+#include "nlohmann/json.hpp"
 #include "parallel.hpp"
 #include "pngwriter.h"
 
@@ -160,14 +161,9 @@ void from_json(const nlohmann::json &j, Input &to) {
     j.at("fname").get_to(to.fname);
 }
 
-Input read_input(const char *fname, int rank) {
+Input read_input(std::string &&fname, int rank) {
     std::stringstream ess;
-    if (fname == nullptr) {
-        ess << "Filename is a nullptr";
-        throw std::runtime_error(ess.str());
-    }
-
-    if (strlen(fname) == 0) {
+    if (fname.empty()) {
         if (rank == 0) {
             std::cout << "Using default input" << std::endl;
         }
