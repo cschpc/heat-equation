@@ -9,6 +9,7 @@ add_executable(
     ${testname}
     field_tests.cpp
     integration_tests.cpp
+    matrix_tests.cpp
     stencil_tests.cpp
     utilities_tests.cpp
 )
