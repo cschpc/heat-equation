@@ -29,7 +29,7 @@ clean:
 	rm -rf $(build_dir_prefix) $(project_name)
 
 .ONESHELL:
-test:
+test: all
 	cd $(build_dir_prefix)/Release
 	ctest
 	cd ../..
