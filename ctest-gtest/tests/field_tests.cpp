@@ -2,8 +2,10 @@
 #include "parallel.hpp"
 #include "pngwriter.h"
 #include "utilities.hpp"
+
 #include <gtest/gtest.h>
 #include <mpi.h>
+#include <numeric>
 
 TEST(field_test, domain_partition_succeeds) {
     constexpr int num_rows = 100;
@@ -48,9 +50,28 @@ TEST(field_test, generation_correct) {
     for (int i = 0; i < num_rows; i++) {
         for (int j = 0; j < num_cols; j++) {
             const int index = i * num_cols + j;
-            ASSERT_EQ(field(i + 1, j + 1), field_data[index]);
+            ASSERT_EQ(field(i, j), field_data[index]);
         }
     }
 
     MPI_Finalize();
+}
+
+TEST(field_test, field_construction) {
+    constexpr int num_rows = 2000;
+    constexpr int num_cols = 2000;
+    std::vector<double> v(num_rows * num_cols);
+    std::iota(v.begin(), v.end(), 0.0);
+    const Field field(std::move(v), num_rows, num_cols);
+
+    ASSERT_EQ(field.num_rows, num_rows);
+    ASSERT_EQ(field.num_cols, num_cols);
+
+    for (int i = 0; i < num_rows; i++) {
+        for (int j = 0; j < num_cols; j++) {
+            const double value = static_cast<double>(i * num_cols + j);
+            // Field doesn't sample the ghost layers
+            ASSERT_EQ(field(i, j), value);
+        }
+    }
 }

@@ -22,15 +22,23 @@ struct Field {
     static constexpr double inv_dx2 = 1.0 / dx2;
     static constexpr double inv_dy2 = 1.0 / dy2;
 
+  private:
     Matrix<double> temperature;
 
+  public:
+    Field() = default;
+    Field(std::vector<double> &&data, int num_rows, int num_cols);
     void setup(int num_rows_in, int num_cols_in, const ParallelData &parallel);
     void generate(const ParallelData &parallel);
     // standard (i,j) syntax for setting elements
-    double& operator()(int i, int j) {return temperature(i, j);}
+    double &operator()(int i, int j) { return temperature(i + 1, j + 1); }
     // standard (i,j) syntax for getting elements
-    const double& operator()(int i, int j) const {return temperature(i, j);}
+    const double &operator()(int i, int j) const {
+        return temperature(i + 1, j + 1);
+    }
 
     static std::pair<int, int> partition_domain(int width, int height,
                                                 int num_partitions);
+    // This is somewhat misleading...
+    double *data(int i = 0, int j = 0) { return temperature.data(i, j); }
 };

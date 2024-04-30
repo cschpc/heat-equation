@@ -7,6 +7,11 @@
 #include <stdexcept>
 #include <utility>
 
+Field::Field(std::vector<double> &&data, int num_rows, int num_cols)
+    : num_rows(num_rows), num_cols(num_cols),
+      temperature(Matrix<double>::make_with_ghost_layers(std::move(data),
+                                                         num_rows, num_cols)) {}
+
 void Field::setup(int num_rows_in, int num_cols_in,
                   const ParallelData &parallel) {
     const auto [nr, nc] =

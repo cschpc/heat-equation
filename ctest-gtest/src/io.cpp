@@ -26,18 +26,22 @@ void write_field(const Field &field, const int iter,
     if (0 == parallel.rank) {
         // Copy the inner data
         auto full_data = Matrix<double>(height, width);
-        for (int i = 0; i < field.num_rows; i++)
-            for (int j = 0; j < field.num_cols; j++)
-                full_data(i, j) = field(i + 1, j + 1);
-          
+        for (int i = 0; i < field.num_rows; i++) {
+            for (int j = 0; j < field.num_cols; j++) {
+                full_data(i, j) = field(i, j);
+            }
+        }
+
         // Receive data from other ranks
         for (int p = 1; p < parallel.size; p++) {
             MPI_Recv(tmp_mat.data(), field.num_rows * field.num_cols,
                      MPI_DOUBLE, p, 22, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             // Copy data to full array
-            for (int i = 0; i < field.num_rows; i++)
-                for (int j = 0; j < field.num_cols; j++)
+            for (int i = 0; i < field.num_rows; i++) {
+                for (int j = 0; j < field.num_cols; j++) {
                     full_data(i + p * field.num_rows, j) = tmp_mat(i, j);
+                }
+            }
         }
         // Write out the data to a png file 
         std::ostringstream filename_stream;
@@ -46,9 +50,11 @@ void write_field(const Field &field, const int iter,
         save_png(full_data.data(), height, width, filename.c_str(), 'c');
     } else {
         // Send data
-        for (int i = 0; i < field.num_rows; i++)
-            for (int j = 0; j < field.num_cols; j++)
-                tmp_mat(i, j) = field(i + 1, j + 1);
+        for (int i = 0; i < field.num_rows; i++) {
+            for (int j = 0; j < field.num_cols; j++) {
+                tmp_mat(i, j) = field(i, j);
+            }
+        }
 
         MPI_Send(tmp_mat.data(), field.num_rows * field.num_cols, MPI_DOUBLE, 0,
                  22, MPI_COMM_WORLD);
@@ -76,29 +82,29 @@ void read_field(Field &field, const std::string &filename,
     // Copy to the array containing also boundaries
     for (int i = 0; i < field.num_rows; i++) {
         for (int j = 0; j < field.num_cols; j++) {
-            field(i + 1, j + 1) = my_data[i * field.num_cols + j];
+            field(i, j) = my_data[i * field.num_cols + j];
         }
     }
 
     // Set the boundary values
-    for (int i = 0; i < field.num_rows + 2; i++) {
+    for (int i = -1; i < field.num_rows + 1; i++) {
         // left boundary
         field(i, 0) = field(i, 1);
         // right boundary
-        field(i, field.num_cols + 1) = field(i, field.num_cols);
+        field(i, field.num_cols) = field(i, field.num_cols - 1);
     }
 
     // top boundary
     if (0 == parallel.rank) {
-        for (int j = 0; j < field.num_cols + 2; j++) {
-            field(0, j) = field(1, j);
+        for (int j = -1; j < field.num_cols + 1; j++) {
+            field(-1, j) = field(0, j);
         }
     }
 
     // bottom boundary
     if (parallel.rank == parallel.size - 1) {
-        for (int j = 0; j < field.num_cols + 2; j++) {
-            field(field.num_rows + 1, j) = field(field.num_rows, j);
+        for (int j = -1; j < field.num_cols + 1; j++) {
+            field(field.num_rows, j) = field(field.num_rows - 1, j);
         }
     }
 }

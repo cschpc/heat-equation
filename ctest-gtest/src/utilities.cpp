@@ -13,9 +13,9 @@ double average(const Field &field, const ParallelData &parallel) {
     double local_average = 0.0;
     double average = 0.0;
 
-    for (int i = 1; i < field.num_rows + 1; i++) {
-        for (int j = 1; j < field.num_cols + 1; j++) {
-            local_average += field.temperature(i, j);
+    for (int i = 0; i < field.num_rows; i++) {
+        for (int j = 0; j < field.num_cols; j++) {
+            local_average += field(i, j);
         }
     }
 
