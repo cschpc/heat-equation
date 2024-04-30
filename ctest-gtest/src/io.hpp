@@ -15,7 +15,7 @@ void read_field(Field &field, const std::string &filename,
 
 namespace heat {
 std::tuple<int, int, std::vector<double>>
-read_field(const std::string &filename, int rank);
+read_field(const std::string &filename);
 
 struct Input {
     int rows = 2000;

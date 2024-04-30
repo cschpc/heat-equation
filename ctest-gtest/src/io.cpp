@@ -68,7 +68,7 @@ void write_field(const Field &field, const int iter,
 
 namespace heat {
 std::tuple<int, int, std::vector<double>>
-read_field(const std::string &filename, int rank) {
+read_field(const std::string &filename) {
     std::stringstream err_msg;
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -87,11 +87,9 @@ read_field(const std::string &filename, int rank) {
 
     // Read data to a vector
     std::vector<double> full_data;
-    if (0 == rank) {
-        std::istream_iterator<double> start(file);
-        std::istream_iterator<double> end;
-        full_data = std::vector<double>(start, end);
-    }
+    std::istream_iterator<double> start(file);
+    std::istream_iterator<double> end;
+    full_data = std::vector<double>(start, end);
 
     if (full_data.size() != num_rows * num_cols) {
         err_msg << "size of data(" << full_data.size()

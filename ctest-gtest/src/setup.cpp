@@ -5,27 +5,9 @@
 #include <iostream>
 
 Field initialize(const heat::Input &input, const ParallelData &parallel) {
-    int num_rows_global = 0;
-    int num_cols_global = 0;
-    std::vector<double> data;
-
-    if (input.read_file) {
-        if (0 == parallel.rank) {
-            std::cout << "Reading input from " + input.fname << std::endl;
-        }
-        auto tuple = heat::read_field(input.fname, parallel.rank);
-        num_rows_global = std::get<0>(tuple);
-        num_cols_global = std::get<1>(tuple);
-        data = std::get<2>(tuple);
-    } else {
-        if (0 == parallel.rank) {
-            std::cout << "Generating data" << std::endl;
-        }
-        num_rows_global = input.rows;
-        num_cols_global = input.cols;
-        data = heat::generate_field(num_rows_global, num_cols_global,
-                                    parallel.rank);
-    }
+    auto [num_rows_global, num_cols_global, data] =
+        input.read_file ? heat::read_field(input.fname)
+                        : heat::generate_field(input.rows, input.cols);
 
     if (0 == parallel.rank) {
         std::cout << "Simulation parameters: "
