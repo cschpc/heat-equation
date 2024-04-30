@@ -44,8 +44,8 @@ public:
       _data.resize(num_rows * num_cols);
   };
 
-  Matrix(std::vector<T> data, int num_rows, int num_cols)
-      : _data(data), num_rows(num_rows), num_cols(num_cols) {}
+  Matrix(std::vector<T> &&data, int num_rows, int num_cols)
+      : _data(std::move(data)), num_rows(num_rows), num_cols(num_cols) {}
 
   void allocate(int nr, int nc) {
       num_rows = nr;
@@ -66,12 +66,13 @@ public:
     // provide possibility to get raw pointer for data at index (i,j) (needed for MPI)
     T *data(int i = 0, int j = 0) { return _data.data() + i * num_cols + j; }
 
-    static Matrix<T> make_with_ghost_layers(std::vector<T> data, int num_rows,
+    static Matrix<T> make_with_ghost_layers(std::vector<T> &&data, int num_rows,
                                             int num_cols) {
-        return make_with_ghost_layers(Matrix<T>(data, num_rows, num_cols));
+        return make_with_ghost_layers(
+            Matrix<T>(std::move(data), num_rows, num_cols));
     }
 
-    static Matrix<T> make_with_ghost_layers(Matrix<T> m) {
+    static Matrix<T> make_with_ghost_layers(Matrix<T> &&m) {
         const int num_rows = m.num_rows + 2;
         const int num_cols = m.num_cols + 2;
         std::vector<double> data(num_rows * num_cols);
@@ -103,6 +104,6 @@ public:
             data[last] = m(m.num_rows - 1, inner_j);
         }
 
-        return Matrix<T>(data, num_rows, num_cols);
+        return Matrix<T>(std::move(data), num_rows, num_cols);
     }
 };
