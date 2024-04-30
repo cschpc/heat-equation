@@ -1,6 +1,5 @@
 /* I/O related functions for heat equation solver */
 
-#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -67,59 +66,12 @@ void write_field(const Field &field, const int iter,
     }
 }
 
-// Read the initial temperature distribution from a file
-void read_field(Field &field, const std::string &filename,
-                const ParallelData &parallel) {
-    auto [num_rows_global, num_cols_global, full_data] =
-        heat::read_field(filename, parallel.rank);
-
-    const auto [num_rows, num_cols] = Field::partition_domain(
-        num_rows_global, num_cols_global, parallel.size);
-    const auto num_values_per_rank = num_rows * num_cols;
-
-    std::vector<double> my_data =
-        heat::scatter(std::move(full_data), parallel.size);
-
-    // After this, possible to pass inner and num_rows to field constructor
-    // So this could return num_rows, num_cols and my_data
-    field.setup(num_rows_global, num_cols_global, parallel);
-
-    // Copy to the array containing also boundaries
-    for (int i = 0; i < field.num_rows; i++) {
-        for (int j = 0; j < field.num_cols; j++) {
-            field(i, j) = my_data[i * field.num_cols + j];
-        }
-    }
-
-    // Set the boundary values
-    for (int i = -1; i < field.num_rows + 1; i++) {
-        // left boundary
-        field(i, -1) = field(i, 0);
-        // right boundary
-        field(i, field.num_cols) = field(i, field.num_cols - 1);
-    }
-
-    // top boundary
-    if (0 == parallel.rank) {
-        for (int j = -1; j < field.num_cols + 1; j++) {
-            field(-1, j) = field(0, j);
-        }
-    }
-
-    // bottom boundary
-    if (parallel.rank == parallel.size - 1) {
-        for (int j = -1; j < field.num_cols + 1; j++) {
-            field(field.num_rows, j) = field(field.num_rows - 1, j);
-        }
-    }
-}
-
 namespace heat {
 std::tuple<int, int, std::vector<double>>
 read_field(const std::string &filename, int rank) {
+    std::stringstream err_msg;
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::stringstream err_msg;
         err_msg << "Could not open file \"" << filename << "\"";
         throw std::runtime_error(err_msg.str());
     }
@@ -139,6 +91,14 @@ read_field(const std::string &filename, int rank) {
         std::istream_iterator<double> start(file);
         std::istream_iterator<double> end;
         full_data = std::vector<double>(start, end);
+    }
+
+    if (full_data.size() != num_rows * num_cols) {
+        err_msg << "size of data(" << full_data.size()
+                << ") is not equal to num_rows (" << num_rows
+                << ") x num_cols (" << num_cols << "), which is "
+                << num_rows * num_cols;
+        throw std::runtime_error(err_msg.str());
     }
 
     return std::make_tuple(num_rows, num_cols, full_data);

@@ -11,8 +11,6 @@ struct Field {
     // num_rows+2 x num_cols+2
     int num_rows; // Local dimensions of the field
     int num_cols;
-    int num_rows_global;        // Global dimensions of the field
-    int num_cols_global;        // Global dimensions of the field
 
     // Grid spacing
     static constexpr double dx = 0.01;
@@ -26,10 +24,7 @@ struct Field {
     Matrix<double> temperature;
 
   public:
-    Field() = default;
     Field(std::vector<double> &&data, int num_rows, int num_cols);
-    void setup(int num_rows_in, int num_cols_in, const ParallelData &parallel);
-    void generate(const ParallelData &parallel);
     // standard (i,j) syntax for setting elements
     double &operator()(int i, int j) { return temperature(i + 1, j + 1); }
     // standard (i,j) syntax for getting elements
@@ -37,7 +32,7 @@ struct Field {
         return temperature(i + 1, j + 1);
     }
 
-    static std::pair<int, int> partition_domain(int width, int height,
+    static std::pair<int, int> partition_domain(int num_rows, int num_cols,
                                                 int num_partitions);
     // This is somewhat misleading...
     double *data(int i = 0, int j = 0) { return temperature.data(i, j); }

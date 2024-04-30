@@ -55,7 +55,7 @@ void run(std::string &&fname) {
     }
 
     const auto stop_clock = MPI_Wtime();
-    constexpr double ref_val = 59.075405;
+    constexpr double ref_val = 59.763305;
 
     avg = heat::average(previous, parallelization);
     if (0 == parallelization.rank) {

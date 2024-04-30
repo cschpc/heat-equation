@@ -29,7 +29,7 @@ double average(const Field &field, const ParallelData &parallel) {
 std::vector<double> generate_field(int num_rows, int num_cols, int rank) {
     std::vector<double> data;
     if (rank == 0) {
-        data.resize((num_rows * num_cols));
+        data.resize(num_rows * num_cols);
         // Radius of the source disc
         const auto radius = num_rows / 6.0;
         for (int i = 0; i < num_rows; i++) {
@@ -45,12 +45,8 @@ std::vector<double> generate_field(int num_rows, int num_cols, int rank) {
     return data;
 }
 
-std::vector<double> scatter(std::vector<double> &&full_data, int n) {
-    const auto num_values_per_rank = full_data.size() / n;
-    if (num_values_per_rank * n != full_data.size()) {
-        throw std::runtime_error("Data not disivisible evenly between ranks");
-    }
-
+std::vector<double> scatter(std::vector<double> &&full_data,
+                            int num_values_per_rank, int n) {
     std::vector<double> my_data(num_values_per_rank);
     MPI_Scatter(full_data.data(), num_values_per_rank, MPI_DOUBLE,
                 my_data.data(), num_values_per_rank, MPI_DOUBLE, 0,
