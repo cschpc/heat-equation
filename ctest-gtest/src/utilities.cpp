@@ -2,6 +2,7 @@
 // NOTE: This file does not need to be edited! 
 
 #include <mpi.h>
+#include <stdexcept>
 
 #include "field.hpp"
 #include "parallel.hpp"
@@ -42,5 +43,19 @@ std::vector<double> generate_field(int num_rows, int num_cols, int rank) {
         }
     }
     return data;
+}
+
+std::vector<double> scatter(std::vector<double> &&full_data, int n) {
+    const auto num_values_per_rank = full_data.size() / n;
+    if (num_values_per_rank * n != full_data.size()) {
+        throw std::runtime_error("Data not disivisible evenly between ranks");
+    }
+
+    std::vector<double> my_data(num_values_per_rank);
+    MPI_Scatter(full_data.data(), num_values_per_rank, MPI_DOUBLE,
+                my_data.data(), num_values_per_rank, MPI_DOUBLE, 0,
+                MPI_COMM_WORLD);
+
+    return my_data;
 }
 } // namespace heat

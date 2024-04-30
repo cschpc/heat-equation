@@ -17,6 +17,7 @@
 #include "nlohmann/json.hpp"
 #include "parallel.hpp"
 #include "pngwriter.h"
+#include "utilities.hpp"
 
 // Write a picture of the temperature field
 void write_field(const Field &field, const int iter,
@@ -71,14 +72,13 @@ void read_field(Field &field, const std::string &filename,
                 const ParallelData &parallel) {
     auto [num_rows_global, num_cols_global, full_data] =
         heat::read_field(filename, parallel.rank);
+
     const auto [num_rows, num_cols] = Field::partition_domain(
         num_rows_global, num_cols_global, parallel.size);
     const auto num_values_per_rank = num_rows * num_cols;
 
-    std::vector<double> my_data(num_values_per_rank);
-    MPI_Scatter(full_data.data(), num_values_per_rank, MPI_DOUBLE,
-                my_data.data(), num_values_per_rank, MPI_DOUBLE, 0,
-                MPI_COMM_WORLD);
+    std::vector<double> my_data =
+        heat::scatter(std::move(full_data), parallel.size);
 
     // After this, possible to pass inner and num_rows to field constructor
     // So this could return num_rows, num_cols and my_data
