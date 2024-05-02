@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <mpi.h>
@@ -12,59 +11,10 @@
 
 #include "field.hpp"
 #include "io.hpp"
-#include "matrix.hpp"
 #include "nlohmann/json.hpp"
 #include "parallel.hpp"
 #include "pngwriter.h"
 #include "utilities.hpp"
-
-// Write a picture of the temperature field
-void write_field(const Field &field, const int iter,
-                 const ParallelData &parallel) {
-
-    auto height = field.num_rows * parallel.size;
-    auto width = field.num_cols;
-
-    // array for MPI sends and receives
-    auto tmp_mat = Matrix<double>(field.num_rows, field.num_cols);
-
-    if (0 == parallel.rank) {
-        // Copy the inner data
-        auto full_data = Matrix<double>(height, width);
-        for (int i = 0; i < field.num_rows; i++) {
-            for (int j = 0; j < field.num_cols; j++) {
-                full_data(i, j) = field(i, j);
-            }
-        }
-
-        // Receive data from other ranks
-        for (int p = 1; p < parallel.size; p++) {
-            MPI_Recv(tmp_mat.data(), field.num_rows * field.num_cols,
-                     MPI_DOUBLE, p, 22, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // Copy data to full array
-            for (int i = 0; i < field.num_rows; i++) {
-                for (int j = 0; j < field.num_cols; j++) {
-                    full_data(i + p * field.num_rows, j) = tmp_mat(i, j);
-                }
-            }
-        }
-        // Write out the data to a png file 
-        std::ostringstream filename_stream;
-        filename_stream << "heat_" << std::setw(4) << std::setfill('0') << iter << ".png";
-        std::string filename = filename_stream.str();
-        save_png(full_data.data(), height, width, filename.c_str(), 'c');
-    } else {
-        // Send data
-        for (int i = 0; i < field.num_rows; i++) {
-            for (int j = 0; j < field.num_cols; j++) {
-                tmp_mat(i, j) = field(i, j);
-            }
-        }
-
-        MPI_Send(tmp_mat.data(), field.num_rows * field.num_cols, MPI_DOUBLE, 0,
-                 22, MPI_COMM_WORLD);
-    }
-}
 
 namespace heat {
 std::tuple<int, int, std::vector<double>>
@@ -86,10 +36,9 @@ read_field(const std::string &filename) {
     std::stringstream(line) >> comment >> num_rows >> num_cols;
 
     // Read data to a vector
-    std::vector<double> full_data;
     std::istream_iterator<double> start(file);
     std::istream_iterator<double> end;
-    full_data = std::vector<double>(start, end);
+    std::vector<double> full_data(start, end);
 
     if (full_data.size() != num_rows * num_cols) {
         err_msg << "size of data(" << full_data.size()
@@ -102,21 +51,42 @@ read_field(const std::string &filename) {
     return std::make_tuple(num_rows, num_cols, full_data);
 }
 
+void write_field(const Field &field, const ParallelData &parallel,
+                 std::string &&filename) {
+    const auto data = heat::gather(field, parallel);
+    if (0 == parallel.rank) {
+        auto height = field.num_rows * parallel.size;
+        auto width = field.num_cols;
+        save_png(data.data(), height, width, filename.c_str(), 'c');
+    }
+}
+
 void to_json(nlohmann::json &j, const Input &from) {
     j = nlohmann::json{
-        {"rows", from.rows},           {"cols", from.cols},
-        {"nsteps", from.nsteps},       {"image_interval", from.image_interval},
-        {"read_file", from.read_file}, {"fname", from.fname},
+        {"fname", from.fname},
+        {"png_name_prefix", from.png_name_prefix},
+        {"diffusion_constant", from.diffusion_constant},
+        {"grid_spacing_x", from.grid_spacing_x},
+        {"grid_spacing_y", from.grid_spacing_y},
+        {"rows", from.rows},
+        {"cols", from.cols},
+        {"nsteps", from.nsteps},
+        {"image_interval", from.image_interval},
+        {"read_file", from.read_file},
     };
 }
 
 void from_json(const nlohmann::json &j, Input &to) {
+    j.at("fname").get_to(to.fname);
+    j.at("png_name_prefix").get_to(to.png_name_prefix);
+    j.at("diffusion_constant").get_to(to.diffusion_constant);
+    j.at("grid_spacing_x").get_to(to.grid_spacing_x);
+    j.at("grid_spacing_y").get_to(to.grid_spacing_y);
     j.at("rows").get_to(to.rows);
     j.at("cols").get_to(to.cols);
     j.at("nsteps").get_to(to.nsteps);
     j.at("image_interval").get_to(to.image_interval);
     j.at("read_file").get_to(to.read_file);
-    j.at("fname").get_to(to.fname);
 }
 
 Input read_input(std::string &&fname, int rank) {
@@ -146,5 +116,12 @@ Input read_input(std::string &&fname, int rank) {
     nlohmann::json j;
     file >> j;
     return j.get<Input>();
+}
+
+std::string make_png_filename(const char *prefix, int iter) {
+    std::ostringstream filename_stream;
+    filename_stream << prefix << std::setw(4) << std::setfill('0') << iter
+                    << ".png";
+    return filename_stream.str();
 }
 } // namespace heat

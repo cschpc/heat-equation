@@ -24,23 +24,22 @@ void exchange(Field &field, const ParallelData &parallel) {
 }
 
 // Update the temperature values using five-point stencil */
-void evolve(Field& curr, const Field& prev, const double a, const double dt)
-{
-
-  // Determine the temperature field at next time step
-  // As we have fixed boundary conditions, the outermost gridpoints
-  // are not updated.
-  for (int i = 0; i < curr.num_rows; i++) {
-      for (int j = 0; j < curr.num_cols; j++) {
-          curr(i, j) =
-              prev(i, j) +
-              a * dt *
-                  ((prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j)) *
-                       Field::inv_dx2 +
-                   (prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1)) *
-                       Field::inv_dy2);
-      }
-  }
+void evolve(Field &curr, const Field &prev, double diffusion_constant,
+            double dt) {
+    // Determine the temperature field at next time step
+    // As we have fixed boundary conditions, the outermost gridpoints
+    // are not updated.
+    for (int i = 0; i < curr.num_rows; i++) {
+        for (int j = 0; j < curr.num_cols; j++) {
+            curr(i, j) =
+                prev(i, j) +
+                diffusion_constant * dt *
+                    ((prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j)) *
+                         Field::inv_dx2 +
+                     (prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1)) *
+                         Field::inv_dy2);
+        }
+    }
 }
 
 namespace heat {

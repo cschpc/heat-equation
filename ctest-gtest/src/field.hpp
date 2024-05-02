@@ -32,6 +32,7 @@ struct Field {
         return temperature(i + 1, j + 1);
     }
     double sum() const;
+    std::vector<double> get_data() const;
     static std::pair<int, int> partition_domain(int num_rows, int num_cols,
                                                 int num_partitions);
     // This is somewhat misleading...

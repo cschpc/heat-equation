@@ -4,10 +4,11 @@
 #include <iostream>
 #include <mpi.h>
 
+#include "core.hpp"
 #include "field.hpp"
-#include "heat.hpp"
 #include "io.hpp"
 #include "parallel.hpp"
+#include "setup.hpp"
 #include "utilities.hpp"
 
 namespace heat{
@@ -21,7 +22,9 @@ void run(std::string &&fname) {
     Field previous = current;
 
     // Output the initial field
-    write_field(current, 0, parallelization);
+    heat::write_field(
+        current, parallelization,
+        heat::make_png_filename(input.png_name_prefix.c_str(), 0));
 
     auto avg = heat::average(current, parallelization);
     if (0 == parallelization.rank) {
@@ -29,13 +32,12 @@ void run(std::string &&fname) {
         std::cout << "Average temperature at start: " << avg << std::endl;
     }
 
-    // Diffusion constant
-    constexpr double a = 0.5;
     constexpr double dx2 = Field::dx2;
     constexpr double dy2 = Field::dy2;
 
     // Largest stable time step
-    constexpr double dt = dx2 * dy2 / (2.0 * a * (dx2 + dy2));
+    const double dt =
+        dx2 * dy2 / (2.0 * input.diffusion_constant * (dx2 + dy2));
 
     //Get the start time stamp
     const auto start_clock = MPI_Wtime();
@@ -43,10 +45,12 @@ void run(std::string &&fname) {
     // Time evolve
     for (int iter = 1; iter <= input.nsteps; iter++) {
         exchange(previous, parallelization);
-        evolve(current, previous, a, dt);
+        evolve(current, previous, input.diffusion_constant, dt);
 
         if (iter % input.image_interval == 0) {
-            write_field(current, iter, parallelization);
+            heat::write_field(
+                current, parallelization,
+                heat::make_png_filename(input.png_name_prefix.c_str(), iter));
         }
 
         // Swap current field so that it will be used
@@ -70,6 +74,8 @@ void run(std::string &&fname) {
     }
 
     // Output the final field
-    write_field(previous, input.nsteps, parallelization);
+    heat::write_field(
+        previous, parallelization,
+        heat::make_png_filename(input.png_name_prefix.c_str(), input.nsteps));
 }
 }

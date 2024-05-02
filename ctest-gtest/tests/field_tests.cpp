@@ -65,3 +65,17 @@ TEST(field_test, unity_field_sum_is_num_items) {
 
     ASSERT_EQ(field.sum(), static_cast<double>(num_rows * num_cols));
 }
+
+TEST(field_test, get_data_yields_correct_data) {
+    constexpr int num_rows = 600;
+    constexpr int num_cols = 240;
+    std::vector<double> v(num_rows * num_cols);
+    std::iota(v.begin(), v.end(), 0.0);
+    const Field field(std::move(v), num_rows, num_cols);
+    const auto data = field.get_data();
+    double value = 0;
+    for (const auto &item : data) {
+        ASSERT_EQ(item, value);
+        value++;
+    }
+}

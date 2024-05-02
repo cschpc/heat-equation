@@ -1,5 +1,6 @@
 // Utility functions for heat equation solver
 
+#include <algorithm>
 #include <mpi.h>
 #include <tuple>
 
@@ -43,5 +44,29 @@ std::vector<double> scatter(std::vector<double> &&full_data,
                 MPI_COMM_WORLD);
 
     return my_data;
+}
+
+std::vector<double> gather(const Field &field, const ParallelData &parallel) {
+    std::vector<double> full_data;
+    constexpr auto tag = 22;
+    const auto num_values = field.num_rows * parallel.size * field.num_cols;
+    auto data = field.get_data();
+
+    if (0 == parallel.rank) {
+        full_data.reserve(num_values);
+        std::copy_n(data.begin(), data.size(), full_data.end());
+
+        // Receive data from other ranks
+        for (int from = 1; from < parallel.size; from++) {
+            MPI_Recv(data.data(), data.size(), MPI_DOUBLE, from, tag,
+                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            std::copy_n(data.begin(), data.size(), full_data.end());
+        }
+    } else {
+        constexpr int to = 0;
+        MPI_Send(data.data(), data.size(), MPI_DOUBLE, to, tag, MPI_COMM_WORLD);
+    }
+
+    return full_data;
 }
 } // namespace heat

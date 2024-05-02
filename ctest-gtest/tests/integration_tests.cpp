@@ -98,7 +98,7 @@ TEST(integration_test, input_from_nonexistent_path_throws_exception) {
         std::runtime_error);
 }
 
-TEST(integration_test, read_field_data_from_file_rank_0) {
+TEST(integration_test, read_field_data_from_file) {
     auto [num_rows, num_cols, data] = heat::read_field("testdata/bottle.dat");
     ASSERT_EQ(data.size(), 40000);
     ASSERT_EQ(num_rows * num_cols, data.size());

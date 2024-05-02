@@ -23,6 +23,18 @@ double Field::sum() const {
     return sum;
 }
 
+std::vector<double> Field::get_data() const {
+    std::vector<double> data(num_rows * num_cols);
+    for (int i = 0; i < num_rows; i++) {
+        for (int j = 0; j < num_cols; j++) {
+            const int index = i * num_cols + j;
+            data[index] = (*this)(i, j);
+        }
+    }
+
+    return data;
+}
+
 std::pair<int, int> Field::partition_domain(int num_rows, int num_cols,
                                             int num_partitions) {
     const int nr = num_rows / num_partitions;

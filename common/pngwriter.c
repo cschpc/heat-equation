@@ -119,7 +119,7 @@ pixel_t cmap(double value, const double scaling, const double offset) {
  *                  and columns are swapped.
  */
 
-uint8_t *bytes_from_data(double *data, const int height, const int width,
+uint8_t *bytes_from_data(const double *data, const int height, const int width,
                          const int num_channels, const char *fname,
                          const char lang) {
     const int c_layout = lang == 'c' || lang == 'C';
@@ -144,8 +144,8 @@ uint8_t *bytes_from_data(double *data, const int height, const int width,
     return bytes;
 }
 
-int save_png(double *data, const int height, const int width, const char *fname,
-             const char lang) {
+int save_png(const double *data, const int height, const int width,
+             const char *fname, const char lang) {
     const size_t num_channels = 3;
     uint8_t *bytes =
         bytes_from_data(data, height, width, num_channels, fname, lang);
@@ -156,8 +156,8 @@ int save_png(double *data, const int height, const int width, const char *fname,
     return status;
 }
 
-uint8_t *load_png(const char *fname, int *nx, int *ny, int *channels) {
-    return stbi_load(fname, nx, ny, channels, 0);
+uint8_t *load_png(const char *fname, int *height, int *width, int *channels) {
+    return stbi_load(fname, height, width, channels, 0);
 }
 
 void release_png(void *data) { stbi_image_free(data); }
