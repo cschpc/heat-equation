@@ -16,7 +16,7 @@ void write_field(const Field &field, const ParallelData &parallel,
 
 struct Input {
     std::string fname = "";
-    std::string png_name_prefix = "";
+    std::string png_name_prefix = "heat_";
 
     double diffusion_constant = 0.5;
     double grid_spacing_x = 0.01;
