@@ -6,7 +6,9 @@ set(testname ${PROJECT_NAME}_mpi_tests)
 
 add_executable(
     ${testname}
+    main.cpp
     full_run_tests.cpp
+    utilities_tests.cpp
 )
 
 target_include_directories(${testname} PRIVATE
@@ -26,9 +28,6 @@ target_link_libraries(
   ${PROJECT_NAME}
 )
 
-include(GoogleTest)
-gtest_discover_tests(${testname})
-
 # Add symbolic link from tests/testdata in source directory to build directory
 ADD_CUSTOM_TARGET(mpi_tests_symlink ALL
     COMMAND ${CMAKE_COMMAND} -E create_symlink
@@ -36,4 +35,21 @@ ADD_CUSTOM_TARGET(mpi_tests_symlink ALL
     "${CMAKE_CURRENT_BINARY_DIR}/${data_dirname}"
     )
 
-# TODO: how to make ctest use mpirun?
+include(GoogleTest)
+
+# Run the tests with mpiexec
+# Need to add before gtest_add_tests to have effect
+
+# !!!!
+# N.B. using gtest_discover_tests instead of gtest_add_tests
+# adds the tests X times,
+# where X is the number of processes used for mpi
+# In other words "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4"
+# runs all the discovered tests four times
+# !!!!
+set_property(TARGET ${testname}
+    PROPERTY CROSSCOMPILING_EMULATOR
+    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4
+    )
+
+gtest_add_tests(TARGET ${testname})
