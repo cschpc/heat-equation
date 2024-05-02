@@ -10,17 +10,10 @@
 namespace heat {
 // Calculate average temperature
 double average(const Field &field, const ParallelData &parallel) {
-    double local_average = 0.0;
     double average = 0.0;
+    double local_sum = field.sum();
 
-    for (int i = 0; i < field.num_rows; i++) {
-        for (int j = 0; j < field.num_cols; j++) {
-            local_average += field(i, j);
-        }
-    }
-
-    MPI_Allreduce(&local_average, &average, 1, MPI_DOUBLE, MPI_SUM,
-                  MPI_COMM_WORLD);
+    MPI_Allreduce(&local_sum, &average, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     average /= (field.num_rows * field.num_cols * parallel.size);
     return average;
 }

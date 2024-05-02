@@ -53,3 +53,16 @@ TEST(matrix_test, add_ghost_layers_from_raw) {
         }
     }
 }
+
+TEST(matrix_test, data_access_correct) {
+    constexpr int nr = 32;
+    constexpr int nc = 16;
+    std::vector<double> v(nr * nc);
+    std::iota(v.begin(), v.end(), 0);
+    const Matrix<double> m(std::move(v), nr, nc);
+    for (int i = 0; i < nr; i++) {
+        for (int j = 0; j < nc; j++) {
+            ASSERT_EQ(*m.data(i, j), m(i, j));
+        }
+    }
+}

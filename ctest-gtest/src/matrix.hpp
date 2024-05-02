@@ -47,12 +47,6 @@ public:
   Matrix(std::vector<T> &&data, int num_rows, int num_cols)
       : _data(std::move(data)), num_rows(num_rows), num_cols(num_cols) {}
 
-  void allocate(int nr, int nc) {
-      num_rows = nr;
-      num_cols = nc;
-      _data.resize(num_rows * num_cols);
-  };
-
     // standard (i,j) syntax for setting elements
     T& operator()(int i, int j) {
         return _data[ indx(i, j) ];
@@ -65,6 +59,9 @@ public:
 
     // provide possibility to get raw pointer for data at index (i,j) (needed for MPI)
     T *data(int i = 0, int j = 0) { return _data.data() + i * num_cols + j; }
+    const T *data(int i = 0, int j = 0) const {
+        return _data.data() + i * num_cols + j;
+    }
 
     static Matrix<T> make_with_ghost_layers(std::vector<T> &&data, int num_rows,
                                             int num_cols) {

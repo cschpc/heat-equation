@@ -1,9 +1,6 @@
 #include "field.hpp"
-#include "parallel.hpp"
-#include "utilities.hpp"
 
 #include <gtest/gtest.h>
-#include <mpi.h>
 #include <numeric>
 
 TEST(field_test, domain_partition_succeeds) {
@@ -49,4 +46,22 @@ TEST(field_test, field_construction) {
             ASSERT_EQ(field(i, j), value);
         }
     }
+}
+
+TEST(field_test, zero_field_sum_is_zero) {
+    constexpr int num_rows = 2000;
+    constexpr int num_cols = 2000;
+    const Field field(std::vector<double>(num_rows * num_cols), num_rows,
+                      num_cols);
+
+    ASSERT_EQ(field.sum(), 0.0);
+}
+
+TEST(field_test, unity_field_sum_is_num_items) {
+    constexpr int num_rows = 2000;
+    constexpr int num_cols = 2000;
+    const Field field(std::vector<double>(num_rows * num_cols, 1.0), num_rows,
+                      num_cols);
+
+    ASSERT_EQ(field.sum(), static_cast<double>(num_rows * num_cols));
 }
