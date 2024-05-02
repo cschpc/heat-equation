@@ -54,13 +54,14 @@ std::vector<double> gather(const Field &field, const ParallelData &parallel) {
 
     if (0 == parallel.rank) {
         full_data.reserve(num_values);
-        std::copy_n(data.begin(), data.size(), full_data.end());
+        std::copy_n(data.begin(), data.size(), std::back_inserter(full_data));
 
         // Receive data from other ranks
         for (int from = 1; from < parallel.size; from++) {
             MPI_Recv(data.data(), data.size(), MPI_DOUBLE, from, tag,
                      MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            std::copy_n(data.begin(), data.size(), full_data.end());
+            std::copy_n(data.begin(), data.size(),
+                        std::back_inserter(full_data));
         }
     } else {
         constexpr int to = 0;
