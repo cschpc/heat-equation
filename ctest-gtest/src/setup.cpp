@@ -4,10 +4,11 @@
 #include "utilities.hpp"
 #include <iostream>
 
-Field initialize(const heat::Input &input, const ParallelData &parallel) {
+namespace heat {
+Field initialize(const Input &input, const ParallelData &parallel) {
     auto [num_rows_global, num_cols_global, data] =
-        input.read_file ? heat::read_field(input.fname)
-                        : heat::generate_field(input.rows, input.cols);
+        input.read_file ? read_field(input.fname)
+                        : generate_field(input.rows, input.cols);
 
     if (0 == parallel.rank) {
         std::cout << "Simulation parameters: "
@@ -20,6 +21,7 @@ Field initialize(const heat::Input &input, const ParallelData &parallel) {
     auto [num_rows, num_cols] = Field::partition_domain(
         num_rows_global, num_cols_global, parallel.size);
 
-    return Field(heat::scatter(std::move(data), num_rows * num_cols), num_rows,
+    return Field(scatter(std::move(data), num_rows * num_cols), num_rows,
                  num_cols);
 }
+} // namespace heat

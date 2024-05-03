@@ -1,4 +1,5 @@
 // Class for basic parallelization information
+namespace heat {
 struct ParallelData {
     int size;            // Number of MPI tasks
     int rank;
@@ -6,3 +7,4 @@ struct ParallelData {
 
     ParallelData();      // Constructor
 };
+} // namespace heat

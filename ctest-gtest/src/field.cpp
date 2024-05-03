@@ -1,4 +1,5 @@
 #include "field.hpp"
+#include "constants.hpp"
 #include "parallel.hpp"
 
 #include <algorithm>
@@ -9,6 +10,7 @@
 #include <stdexcept>
 #include <utility>
 
+namespace heat {
 Field::Field(std::vector<double> &&data, int num_rows, int num_cols)
     : num_rows(num_rows), num_cols(num_cols),
       temperatures((num_rows + 2) * (num_cols + 2)) {
@@ -74,6 +76,18 @@ std::vector<double> Field::get_temperatures() const {
     return data;
 }
 
+double Field::sample(int i, int j, const Constants &constants) const {
+    const auto center = (*this)(i, j);
+    const auto up = (*this)(i - 1, j);
+    const auto down = (*this)(i + 1, j);
+    const auto left = (*this)(i, j - 1);
+    const auto right = (*this)(i, j + 1);
+    const auto x = right + left - 2.0 * center;
+    const auto y = down + up - 2.0 * center;
+    return center + constants.a * constants.dt *
+                        (x * constants.inv_dx2 + y * constants.inv_dy2);
+}
+
 std::pair<int, int> Field::partition_domain(int num_rows, int num_cols,
                                             int num_partitions) {
     const int nr = num_rows / num_partitions;
@@ -88,3 +102,4 @@ std::pair<int, int> Field::partition_domain(int num_rows, int num_cols,
 
     return std::make_pair(nr, nc);
 }
+} // namespace heat

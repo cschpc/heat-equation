@@ -4,10 +4,10 @@
 #include <tuple>
 #include <vector>
 
+namespace heat {
 struct Field;
 struct ParallelData;
 
-namespace heat {
 std::tuple<int, int, std::vector<double>>
 read_field(const std::string &filename);
 
@@ -48,4 +48,4 @@ void to_json(nlohmann::json &j, const Input &from);
 void from_json(const nlohmann::json &j, Input &to);
 Input read_input(std::string &&fname, int rank);
 std::string make_png_filename(const char *prefix, int iter);
-}
+} // namespace heat

@@ -3,6 +3,9 @@
 #include <cassert>
 #include <vector>
 
+namespace heat {
+struct Constants;
+
 struct Field {
     const int num_rows = 0;
     const int num_cols = 0;
@@ -38,13 +41,22 @@ struct Field {
     double sum() const;
     std::vector<double> get_temperatures() const;
     void swap(Field &f) { std::swap(temperatures, f.temperatures); }
+    // The pointer to values that are sent up, i.e. to the first non-ghost value
     const double *to_up() const { return temperatures.data() + index(1, 1); }
+    // The pointer to values that are sent down, i.e. the first non-ghost value
+    // on the last non-ghost row
     const double *to_down() const {
         return temperatures.data() + index(num_rows, 1);
     }
+    // The pointer to values that are received from up, i.e. top ghost layer
     double *from_up() { return temperatures.data() + index(0, 1); }
+    // The pointer to values that are received from down, i.e. bottom ghost
+    // layer
     double *from_down() { return temperatures.data() + index(num_rows + 1, 1); }
+    int num_to_exchange() const { return num_cols; }
+    double sample(int i, int j, const Constants &constants) const;
 
     static std::pair<int, int> partition_domain(int num_rows, int num_cols,
                                                 int num_partitions);
 };
+} // namespace heat

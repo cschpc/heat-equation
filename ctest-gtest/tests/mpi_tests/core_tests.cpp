@@ -9,11 +9,11 @@ TEST(core_test, exchange_data) {
     constexpr int num_rows = 1600;
     constexpr int num_cols = 64;
     constexpr int n = num_rows * num_cols;
-    ParallelData pd;
+    heat::ParallelData pd;
     std::vector<double> v(num_rows * num_cols);
     const auto first = pd.rank * n + 1;
     std::iota(v.begin(), v.end(), first);
-    Field field(std::move(v), num_rows, num_cols);
+    heat::Field field(std::move(v), num_rows, num_cols);
 
     heat::exchange(field, pd);
 

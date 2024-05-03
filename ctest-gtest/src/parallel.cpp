@@ -1,6 +1,7 @@
 #include "parallel.hpp"
 #include <mpi.h>
 
+namespace heat {
 ParallelData::ParallelData() {
 
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -16,3 +17,4 @@ ParallelData::ParallelData() {
         ndown = MPI_PROC_NULL;
     }
 }
+} // namespace heat
