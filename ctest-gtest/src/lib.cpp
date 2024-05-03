@@ -4,6 +4,7 @@
 #include <iostream>
 #include <mpi.h>
 
+#include "constants.hpp"
 #include "core.hpp"
 #include "field.hpp"
 #include "io.hpp"
@@ -16,6 +17,7 @@ void run(std::string &&fname) {
     // Parallelization info
     ParallelData parallelization;
     const Input input = read_input(std::move(fname), parallelization.rank);
+    const Constants constants(input);
 
     // Temperature fields
     Field current = initialize(input, parallelization);
@@ -32,20 +34,13 @@ void run(std::string &&fname) {
         std::cout << "Average temperature at start: " << avg << std::endl;
     }
 
-    constexpr double dx2 = Field::dx2;
-    constexpr double dy2 = Field::dy2;
-
-    // Largest stable time step
-    const double dt =
-        dx2 * dy2 / (2.0 * input.diffusion_constant * (dx2 + dy2));
-
     //Get the start time stamp
     const auto start_clock = MPI_Wtime();
 
     // Time evolve
     for (int iter = 1; iter <= input.nsteps; iter++) {
         exchange(previous, parallelization);
-        evolve(current, previous, input.diffusion_constant, dt);
+        evolve(current, previous, constants);
 
         if (iter % input.image_interval == 0) {
             heat::write_field(

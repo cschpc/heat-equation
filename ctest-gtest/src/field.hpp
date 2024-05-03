@@ -12,14 +12,6 @@ struct Field {
     int num_rows; // Local dimensions of the field
     int num_cols;
 
-    // Grid spacing
-    static constexpr double dx = 0.01;
-    static constexpr double dy = 0.01;
-    static constexpr double dx2 = dx * dx;
-    static constexpr double dy2 = dy * dy;
-    static constexpr double inv_dx2 = 1.0 / dx2;
-    static constexpr double inv_dy2 = 1.0 / dy2;
-
   private:
     Matrix<double> temperature;
 

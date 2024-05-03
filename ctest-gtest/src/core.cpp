@@ -2,6 +2,8 @@
 
 #include <mpi.h>
 
+#include "constants.hpp"
+#include "core.hpp"
 #include "field.hpp"
 #include "parallel.hpp"
 
@@ -24,8 +26,7 @@ void exchange(Field &field, const ParallelData &parallel) {
 }
 
 // Update the temperature values using five-point stencil */
-void evolve(Field &curr, const Field &prev, double diffusion_constant,
-            double dt) {
+void evolve(Field &curr, const Field &prev, const heat::Constants &constants) {
     // Determine the temperature field at next time step
     // As we have fixed boundary conditions, the outermost gridpoints
     // are not updated.
@@ -33,17 +34,11 @@ void evolve(Field &curr, const Field &prev, double diffusion_constant,
         for (int j = 0; j < curr.num_cols; j++) {
             curr(i, j) =
                 prev(i, j) +
-                diffusion_constant * dt *
-                    ((prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j)) *
-                         Field::inv_dx2 +
-                     (prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1)) *
-                         Field::inv_dy2);
+                constants.a * constants.dt *
+                    ((prev(i, j + 1) - 2.0 * prev(i, j) + prev(i, j - 1)) *
+                         constants.inv_dx2 +
+                     (prev(i + 1, j) - 2.0 * prev(i, j) + prev(i - 1, j)) *
+                         constants.inv_dy2);
         }
     }
 }
-
-namespace heat {
-double stencil(int i, int j, const Field &field, double a, double dt) {
-    return 0.0;
-}
-} // namespace heat
