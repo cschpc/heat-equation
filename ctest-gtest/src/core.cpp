@@ -11,18 +11,20 @@
 void exchange(Field &field, const ParallelData &parallel) {
 
     // Send to up, receive from down
-    auto sbuf = field.data(1, 0);
-    auto rbuf = field.data(field.num_rows + 1, 0);
-    MPI_Sendrecv(sbuf, field.num_cols + 2, MPI_DOUBLE, parallel.nup, 11, rbuf,
-                 field.num_cols + 2, MPI_DOUBLE, parallel.ndown, 11,
+    constexpr int tag1 = 11;
+    auto sbuf = field.data(1, 1);
+    auto rbuf = field.data(field.num_rows + 1, 1);
+    MPI_Sendrecv(sbuf, field.num_cols, MPI_DOUBLE, parallel.nup, tag1, rbuf,
+                 field.num_cols, MPI_DOUBLE, parallel.ndown, tag1,
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     // Send to down, receive from up
-    sbuf = field.data(field.num_rows, 0);
-    rbuf = field.data();
-    MPI_Sendrecv(sbuf, field.num_cols + 2, MPI_DOUBLE, parallel.ndown, 12, rbuf,
-                 field.num_cols + 2, MPI_DOUBLE, parallel.nup, 12,
-                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    constexpr int tag2 = 12;
+    sbuf = field.data(field.num_rows, 1);
+    rbuf = field.data(0, 1);
+    MPI_Sendrecv(sbuf, field.num_cols, MPI_DOUBLE, parallel.ndown, tag2, rbuf,
+                 field.num_cols, MPI_DOUBLE, parallel.nup, tag2, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
 }
 
 // Update the temperature values using five-point stencil */

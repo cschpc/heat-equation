@@ -1,4 +1,3 @@
-- Add simulation constants
 - Clean up setup: it's pretty redudant now
 - Add tests for stencil
 - Make field singular, swap temperature matrices inside it
