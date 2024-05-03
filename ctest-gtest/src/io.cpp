@@ -55,7 +55,7 @@ void write_field(const Field &field, const ParallelData &parallel,
                  std::string &&filename) {
     const auto height = field.num_rows * parallel.size;
     const auto width = field.num_cols;
-    const auto data = heat::gather(field.get_data(), height * width);
+    const auto data = heat::gather(field.get_temperatures(), height * width);
     if (0 == parallel.rank) {
         save_png(data.data(), height, width, filename.c_str(), 'c');
     }

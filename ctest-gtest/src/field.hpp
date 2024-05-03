@@ -1,32 +1,48 @@
 #pragma once
 
-#include "matrix.hpp"
+#include <cassert>
+#include <vector>
 
-struct ParallelData;
-
-// Class for temperature field
 struct Field {
-    // num_rows and num_cols are the true dimensions of the field. The
-    // temperature matrix contains also ghost layers, so it will have dimensions
-    // num_rows+2 x num_cols+2
-    int num_rows; // Local dimensions of the field
-    int num_cols;
+    int num_rows = 0;
+    int num_cols = 0;
 
   private:
-    Matrix<double> temperature;
+    std::vector<double> temperatures;
+
+    // Internal 1D indexing
+    const int index(int i, int j) const {
+        const int idx = i * (num_cols + 2) + j;
+        assert(idx >= 0 && idx < temperatures.size());
+
+        return idx;
+    }
 
   public:
-    Field(std::vector<double> &&data, int num_rows, int num_cols);
+    Field(std::vector<double> &&temperatures, int num_rows, int num_cols);
+
     // standard (i,j) syntax for setting elements
-    double &operator()(int i, int j) { return temperature(i + 1, j + 1); }
-    // standard (i,j) syntax for getting elements
-    const double &operator()(int i, int j) const {
-        return temperature(i + 1, j + 1);
+    // i and j are both offset by one to skip the ghost layers
+    double &operator()(int i, int j) {
+        return temperatures[index(i + 1, j + 1)];
     }
+    const double &operator()(int i, int j) const {
+        return temperatures[index(i + 1, j + 1)];
+    }
+
     double sum() const;
-    std::vector<double> get_data() const;
+    std::vector<double> get_temperatures() const;
+
+    // TODO: maybe make a opaque function that gives the correct send/receive
+    // row. This way indexing details are internal to field
+    // N.B. this differs from operator(i, j) These are not offset by one!
+    double *data(int i = 0, int j = 0) {
+        return temperatures.data() + index(i, j);
+    }
+    const double *data(int i = 0, int j = 0) const {
+        return temperatures.data() + index(i, j);
+    }
+
     static std::pair<int, int> partition_domain(int num_rows, int num_cols,
                                                 int num_partitions);
-    // This is somewhat misleading...
-    double *data(int i = 0, int j = 0) { return temperature.data(i, j); }
 };
