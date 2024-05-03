@@ -7,24 +7,21 @@
 #include "field.hpp"
 #include "parallel.hpp"
 
+namespace heat {
 // Exchange the boundary values
 void exchange(Field &field, const ParallelData &parallel) {
 
     // Send to up, receive from down
     constexpr int tag1 = 11;
-    auto sbuf = field.data(1, 1);
-    auto rbuf = field.data(field.num_rows + 1, 1);
-    MPI_Sendrecv(sbuf, field.num_cols, MPI_DOUBLE, parallel.nup, tag1, rbuf,
-                 field.num_cols, MPI_DOUBLE, parallel.ndown, tag1,
-                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Sendrecv(field.to_up(), field.num_cols, MPI_DOUBLE, parallel.nup, tag1,
+                 field.from_down(), field.num_cols, MPI_DOUBLE, parallel.ndown,
+                 tag1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     // Send to down, receive from up
     constexpr int tag2 = 12;
-    sbuf = field.data(field.num_rows, 1);
-    rbuf = field.data(0, 1);
-    MPI_Sendrecv(sbuf, field.num_cols, MPI_DOUBLE, parallel.ndown, tag2, rbuf,
-                 field.num_cols, MPI_DOUBLE, parallel.nup, tag2, MPI_COMM_WORLD,
-                 MPI_STATUS_IGNORE);
+    MPI_Sendrecv(field.to_down(), field.num_cols, MPI_DOUBLE, parallel.ndown,
+                 tag2, field.from_up(), field.num_cols, MPI_DOUBLE,
+                 parallel.nup, tag2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
 // Update the temperature values using five-point stencil */
@@ -44,3 +41,4 @@ void evolve(Field &curr, const Field &prev, const heat::Constants &constants) {
         }
     }
 }
+} // namespace heat

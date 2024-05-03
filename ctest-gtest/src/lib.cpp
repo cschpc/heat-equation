@@ -24,11 +24,10 @@ void run(std::string &&fname) {
     Field previous = current;
 
     // Output the initial field
-    heat::write_field(
-        current, parallelization,
-        heat::make_png_filename(input.png_name_prefix.c_str(), 0));
+    write_field(current, parallelization,
+                make_png_filename(input.png_name_prefix.c_str(), 0));
 
-    auto avg = heat::average(current, parallelization);
+    auto avg = average(current, parallelization);
     if (0 == parallelization.rank) {
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "Average temperature at start: " << avg << std::endl;
@@ -43,9 +42,8 @@ void run(std::string &&fname) {
         evolve(current, previous, constants);
 
         if (iter % input.image_interval == 0) {
-            heat::write_field(
-                current, parallelization,
-                heat::make_png_filename(input.png_name_prefix.c_str(), iter));
+            write_field(current, parallelization,
+                        make_png_filename(input.png_name_prefix.c_str(), iter));
         }
 
         // Swap current field so that it will be used
@@ -56,7 +54,7 @@ void run(std::string &&fname) {
     const auto stop_clock = MPI_Wtime();
     constexpr double ref_val = 59.763305;
 
-    avg = heat::average(previous, parallelization);
+    avg = average(previous, parallelization);
     if (0 == parallelization.rank) {
         std::cout << "Iteration took " << (stop_clock - start_clock)
                   << " seconds." << std::endl;
@@ -69,8 +67,7 @@ void run(std::string &&fname) {
     }
 
     // Output the final field
-    heat::write_field(
-        previous, parallelization,
-        heat::make_png_filename(input.png_name_prefix.c_str(), input.nsteps));
+    write_field(previous, parallelization,
+                make_png_filename(input.png_name_prefix.c_str(), input.nsteps));
 }
 }

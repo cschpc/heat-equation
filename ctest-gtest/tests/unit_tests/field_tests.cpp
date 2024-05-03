@@ -98,3 +98,51 @@ TEST(field_test, swap_data) {
         }
     }
 }
+
+TEST(field_test, to_up_correct) {
+    constexpr int num_rows = 600;
+    constexpr int num_cols = 240;
+    std::vector<double> v(num_rows * num_cols);
+    std::iota(v.begin(), v.end(), 0.0);
+    Field field(std::move(v), num_rows, num_cols);
+    auto to_up = field.to_up();
+    ASSERT_EQ(*to_up, 0.0);
+    ASSERT_EQ(*(to_up + 1), 1.0);
+    ASSERT_EQ(*(to_up - 1), 0.0);
+    ASSERT_EQ(*(to_up - 2), static_cast<double>(num_cols - 1));
+    ASSERT_EQ(*(to_up - 3), static_cast<double>(num_cols - 1));
+}
+
+TEST(field_test, to_down_correct) {
+    constexpr int num_rows = 200;
+    constexpr int num_cols = 40;
+    std::vector<double> v(num_rows * num_cols);
+    std::iota(v.begin(), v.end(), 0.0);
+    Field field(std::move(v), num_rows, num_cols);
+    auto to_down = field.to_down();
+    constexpr auto value = (num_rows - 1) * num_cols;
+    ASSERT_EQ(*to_down, value);
+    ASSERT_EQ(*(to_down + 1), value + 1.0);
+    ASSERT_EQ(*(to_down - 1), value);
+    ASSERT_EQ(*(to_down + num_cols + 1), value);
+    ASSERT_EQ(*(to_down + num_cols + 2), value);
+    ASSERT_EQ(*(to_down + num_cols + 3), value + 1);
+}
+
+TEST(field_test, from_up_correct) {
+    constexpr int num_rows = 60;
+    constexpr int num_cols = 20;
+    std::vector<double> v(num_rows * num_cols);
+    std::iota(v.begin(), v.end(), 0.0);
+    Field field(std::move(v), num_rows, num_cols);
+    ASSERT_EQ(field.from_up() + num_cols + 2, field.to_up());
+}
+
+TEST(field_test, from_down_correct) {
+    constexpr int num_rows = 60;
+    constexpr int num_cols = 20;
+    std::vector<double> v(num_rows * num_cols);
+    std::iota(v.begin(), v.end(), 0.0);
+    Field field(std::move(v), num_rows, num_cols);
+    ASSERT_EQ(field.from_down() - num_cols - 2, field.to_down());
+}

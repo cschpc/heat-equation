@@ -38,16 +38,12 @@ struct Field {
     double sum() const;
     std::vector<double> get_temperatures() const;
     void swap(Field &f) { std::swap(temperatures, f.temperatures); }
-
-    // TODO: maybe make a opaque function that gives the correct send/receive
-    // row. This way indexing details are internal to field
-    // N.B. this differs from operator(i, j) These are not offset by one!
-    double *data(int i = 0, int j = 0) {
-        return temperatures.data() + index(i, j);
+    const double *to_up() const { return temperatures.data() + index(1, 1); }
+    const double *to_down() const {
+        return temperatures.data() + index(num_rows, 1);
     }
-    const double *data(int i = 0, int j = 0) const {
-        return temperatures.data() + index(i, j);
-    }
+    double *from_up() { return temperatures.data() + index(0, 1); }
+    double *from_down() { return temperatures.data() + index(num_rows + 1, 1); }
 
     static std::pair<int, int> partition_domain(int num_rows, int num_cols,
                                                 int num_partitions);

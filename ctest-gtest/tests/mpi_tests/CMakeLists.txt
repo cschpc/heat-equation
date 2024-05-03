@@ -7,6 +7,7 @@ set(testname ${PROJECT_NAME}_mpi_tests)
 add_executable(
     ${testname}
     main.cpp
+    core_tests.cpp
     full_run_tests.cpp
     utilities_tests.cpp
 )
