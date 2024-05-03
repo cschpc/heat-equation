@@ -20,7 +20,6 @@ Field initialize(const heat::Input &input, const ParallelData &parallel) {
     auto [num_rows, num_cols] = Field::partition_domain(
         num_rows_global, num_cols_global, parallel.size);
 
-    return Field(
-        heat::scatter(std::move(data), num_rows * num_cols, parallel.size),
-        num_rows, num_cols);
+    return Field(heat::scatter(std::move(data), num_rows * num_cols), num_rows,
+                 num_cols);
 }

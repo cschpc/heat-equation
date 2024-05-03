@@ -1,6 +1,5 @@
 // Utility functions for heat equation solver
 
-#include <algorithm>
 #include <mpi.h>
 #include <tuple>
 
@@ -9,14 +8,15 @@
 #include "utilities.hpp"
 
 namespace heat {
-// Calculate average temperature
-double average(const Field &field, const ParallelData &parallel) {
-    double average = 0.0;
-    double local_sum = field.sum();
+double average(const Field &field, const ParallelData &pd) {
+    return sum(field.sum()) / (field.num_rows * field.num_cols * pd.size);
+}
 
-    MPI_Allreduce(&local_sum, &average, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    average /= (field.num_rows * field.num_cols * parallel.size);
-    return average;
+double sum(double local_sum) {
+    double global_sum = 0.0;
+    MPI_Allreduce(&local_sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM,
+                  MPI_COMM_WORLD);
+    return global_sum;
 }
 
 std::tuple<int, int, std::vector<double>> generate_field(int num_rows,
@@ -37,7 +37,7 @@ std::tuple<int, int, std::vector<double>> generate_field(int num_rows,
 }
 
 std::vector<double> scatter(std::vector<double> &&full_data,
-                            int num_values_per_rank, int n) {
+                            int num_values_per_rank) {
     std::vector<double> my_data(num_values_per_rank);
     MPI_Scatter(full_data.data(), num_values_per_rank, MPI_DOUBLE,
                 my_data.data(), num_values_per_rank, MPI_DOUBLE, 0,
@@ -46,27 +46,11 @@ std::vector<double> scatter(std::vector<double> &&full_data,
     return my_data;
 }
 
-std::vector<double> gather(const Field &field, const ParallelData &parallel) {
-    std::vector<double> full_data;
-    constexpr auto tag = 22;
-    const auto num_values = field.num_rows * parallel.size * field.num_cols;
-    auto data = field.get_data();
-
-    if (0 == parallel.rank) {
-        full_data.reserve(num_values);
-        std::copy_n(data.begin(), data.size(), std::back_inserter(full_data));
-
-        // Receive data from other ranks
-        for (int from = 1; from < parallel.size; from++) {
-            MPI_Recv(data.data(), data.size(), MPI_DOUBLE, from, tag,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            std::copy_n(data.begin(), data.size(),
-                        std::back_inserter(full_data));
-        }
-    } else {
-        constexpr int to = 0;
-        MPI_Send(data.data(), data.size(), MPI_DOUBLE, to, tag, MPI_COMM_WORLD);
-    }
+std::vector<double> gather(std::vector<double> &&my_data,
+                           int num_total_values) {
+    std::vector<double> full_data(num_total_values);
+    MPI_Gather(my_data.data(), my_data.size(), MPI_DOUBLE, full_data.data(),
+               my_data.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     return full_data;
 }

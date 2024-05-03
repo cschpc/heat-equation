@@ -53,10 +53,10 @@ read_field(const std::string &filename) {
 
 void write_field(const Field &field, const ParallelData &parallel,
                  std::string &&filename) {
-    const auto data = heat::gather(field, parallel);
+    const auto height = field.num_rows * parallel.size;
+    const auto width = field.num_cols;
+    const auto data = heat::gather(field.get_data(), height * width);
     if (0 == parallel.rank) {
-        auto height = field.num_rows * parallel.size;
-        auto width = field.num_cols;
         save_png(data.data(), height, width, filename.c_str(), 'c');
     }
 }
