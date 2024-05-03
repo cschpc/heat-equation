@@ -73,9 +73,9 @@ TEST(field_test, get_data_yields_correct_data) {
     std::iota(v.begin(), v.end(), 0.0);
     const Field field(std::move(v), num_rows, num_cols);
     const auto data = field.get_temperatures();
+    ASSERT_EQ(data.size(), num_rows * num_cols);
     double value = 0;
     for (const auto &item : data) {
-        ASSERT_EQ(item, value);
-        value++;
+        ASSERT_EQ(item, value++);
     }
 }

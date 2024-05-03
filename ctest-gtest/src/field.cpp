@@ -37,7 +37,7 @@ Field::Field(std::vector<double> &&data, int num_rows, int num_cols)
 
     for (int j = 0; j < nc; j++) {
         const int first = j;
-        const int last = temperatures.size() - nc + j;
+        const int last = (nr - 1) * nc + j;
         // Top
         temperatures[first] = temperatures[first + nc];
         // Bottom
