@@ -50,7 +50,7 @@ void run(std::string &&fname) {
 
         // Swap current field so that it will be used
         // as previous for next iteration step
-        std::swap(current, previous);
+        current.swap(previous);
     }
 
     const auto stop_clock = MPI_Wtime();

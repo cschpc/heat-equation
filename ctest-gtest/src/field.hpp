@@ -4,8 +4,8 @@
 #include <vector>
 
 struct Field {
-    int num_rows = 0;
-    int num_cols = 0;
+    const int num_rows = 0;
+    const int num_cols = 0;
 
   private:
     // This contains (num_rows + 2) * (num_cols + 2) values, so ghost layers as
@@ -37,6 +37,7 @@ struct Field {
 
     double sum() const;
     std::vector<double> get_temperatures() const;
+    void swap(Field &f) { std::swap(temperatures, f.temperatures); }
 
     // TODO: maybe make a opaque function that gives the correct send/receive
     // row. This way indexing details are internal to field

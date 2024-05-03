@@ -79,3 +79,22 @@ TEST(field_test, get_data_yields_correct_data) {
         ASSERT_EQ(item, value++);
     }
 }
+
+TEST(field_test, swap_data) {
+    constexpr int num_rows = 600;
+    constexpr int num_cols = 240;
+
+    std::vector<double> v(num_rows * num_cols);
+    std::iota(v.begin(), v.end(), 0.0);
+    Field f(std::move(v), num_rows, num_cols);
+    Field g(std::vector<double>(num_rows * num_cols), num_rows, num_cols);
+    f.swap(g);
+
+    double value = 0.0;
+    for (int i = 0; i < f.num_rows; i++) {
+        for (int j = 0; j < f.num_cols; j++) {
+            ASSERT_EQ(f(i, j), 0.0);
+            ASSERT_EQ(g(i, j), value++);
+        }
+    }
+}
