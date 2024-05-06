@@ -70,24 +70,112 @@ struct Field {
     // Swap the temperatures data with another field
     void swap(Field &f) { std::swap(temperatures, f.temperatures); }
 
-    // ## Buffer exchange functions
-    // N.B. Left and right ghost columns are skipped in the exchange, as those
-    // are never sampled by the five point stencil anyway
+    /* ## Buffer exchange functions
+     * N.B. Left and right ghost columns are skipped in the exchange, because
+     * only top and bottom rows are exchanged and the corners of the matrix are
+     * never sampled by the five point stencil:
+     *
+     * X G G G G G X
+     * G D D D D D G
+     * G D D D D D G
+     * X G G G G G X
+     *
+     * where
+     *  G is ghost data
+     *  X is never sampled
+     *  D is internal data
+     */
 
-    // The pointer to values that are sent up, i.e. to the first non-ghost value
-    const double *to_up() const { return temperatures.data() + index(1, 1); }
+    const double *to_up() const {
+        /* The pointer to values that are sent up,
+         * i.e. to the first non-ghost value
+         *
+         *       |
+         *       v
+         *     G G G G G G G  <- top ghost row
+         * --> G S s s s s G  <- first non-ghost row
+         *     G D D D D D G
+         *     . . . . . . .  more data
+         *     . . . . . . .  |
+         *     . . . . . . .  v
+         *
+         * where
+         *  G is ghost data
+         *  S is pointed to
+         *  S/s is sent data
+         *  D is internal data
+         */
+        return temperatures.data() + index(1, 1);
+    }
 
-    // The pointer to values that are sent down, i.e. the first non-ghost value
-    // on the last non-ghost row
     const double *to_down() const {
+        /* The pointer to values that are sent down,
+         * i.e. the first non-ghost value on the last non-ghost row
+         *
+         *     . . . . . . .  ^
+         *     . . . . . . .  |
+         *     . . . . . . .  more data
+         *     G D D D D D G
+         * --> G S s s s s G  <- last non-ghost row
+         *     G G G G G G G  <- bottom ghost row
+         *       ^
+         *       |
+         *
+         * where
+         *  G is ghost data
+         *  S is pointed to
+         *  S/s is sent data
+         *  D is internal data
+         */
         return temperatures.data() + index(num_rows, 1);
     }
-    // The pointer to values that are received from up, i.e. top ghost layer
-    double *from_up() { return temperatures.data() + index(0, 1); }
-    // The pointer to values that are received from down, i.e. bottom ghost
-    // layer
-    double *from_down() { return temperatures.data() + index(num_rows + 1, 1); }
-    int num_to_exchange() const { return num_cols; }
+
+    double *from_up() {
+        /* The pointer to values that are received from up, i.e. top ghost layer
+         *
+         *       |
+         *       v
+         * --> G R r r r r G  <- top ghost row
+         *     G D D D D D G  <- first non-ghost row
+         *     . . . . . . .  more data
+         *     . . . . . . .  |
+         *     . . . . . . .  v
+         *
+         * where
+         *  G is ghost data
+         *  R is pointed to
+         *  R/r is received data
+         *  D is internal data
+         */
+        return temperatures.data() + index(0, 1);
+    }
+
+    double *from_down() {
+        /* The pointer to values that are received from down, i.e. bottom ghost
+         * layer
+         *
+         *     . . . . . . .  ^
+         *     . . . . . . .  |
+         *     . . . . . . .  more data
+         * --> G D D D D D G  <- last non-ghost row
+         *     G R r r r r G  <- bottom ghost row
+         *       ^
+         *       |
+         *
+         * where
+         *  G is ghost data
+         *  R is pointed to
+         *  R/r is received data
+         *  D is internal data
+         */
+        return temperatures.data() + index(num_rows + 1, 1);
+    }
+
+    int num_to_exchange() const {
+        // How many values on each row are exchanged with other processes
+        // Excludes ghost columns
+        return num_cols;
+    }
 
     /* The five point stencil sampling function
      * - - - - -
