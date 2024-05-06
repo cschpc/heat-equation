@@ -14,7 +14,7 @@ namespace heat {
 Field::Field(std::vector<double> &&data, int num_rows, int num_cols)
     : num_rows(num_rows), num_cols(num_cols),
       temperatures((num_rows + 2) * (num_cols + 2)) {
-    // Copy the real data to the inner part
+    // Copy the real data to the inner part of the temperature field
     for (int i = 0; i < num_rows; i++) {
         const int row = i + 1;
         const int width = num_cols + 2;
@@ -25,7 +25,8 @@ Field::Field(std::vector<double> &&data, int num_rows, int num_cols)
         std::copy_n(from, num_cols, to);
     }
 
-    // Make the ghost layers
+    // Make the ghost layers by copying the value from the closest real
+    // row/column
     const int nr = num_rows + 2;
     const int nc = num_cols + 2;
     for (int i = 0; i < nr; i++) {
@@ -48,6 +49,7 @@ Field::Field(std::vector<double> &&data, int num_rows, int num_cols)
 }
 
 double Field::sum() const {
+    // Sum the real values of the field
     double sum = 0.0;
     for (int i = 0; i < num_rows; i++) {
         for (int j = 0; j < num_cols; j++) {
@@ -59,8 +61,7 @@ double Field::sum() const {
 }
 
 std::vector<double> Field::get_temperatures() const {
-    // Copy the "real" data, skip the ghost layers on top, bottom, left and
-    // right
+    // Copy the real data of the field, skipping the ghost layers
     std::vector<double> data;
     data.reserve(num_rows * num_cols);
 
@@ -77,6 +78,13 @@ std::vector<double> Field::get_temperatures() const {
 }
 
 double Field::sample(int i, int j, const Constants &constants) const {
+    /* The five point stencil sampling
+     * - - - - -
+     * - - + - -
+     * - + + + -
+     * - - + - -
+     * - - - - -
+     * */
     const auto center = (*this)(i, j);
     const auto up = (*this)(i - 1, j);
     const auto down = (*this)(i + 1, j);
@@ -90,6 +98,29 @@ double Field::sample(int i, int j, const Constants &constants) const {
 
 std::pair<int, int> Field::partition_domain(int num_rows, int num_cols,
                                             int num_partitions) {
+    /* Attempt to partition the domain evenly to all processes
+     * The columns are not partitioned, i.e. each process has a certain number
+     * of full rows.
+     * N.B. This function doesn't handle any data, it only computes the
+     * partition sizes
+     *
+     * Example:
+     * 12x13 matrix is divided to four processes:
+     *    0 0 0 0 0 0 0 0 0 0 1 1 1
+     *    0 1 2 3 4 5 6 7 8 9 0 1 2
+     * 00 D D D D D D D D D D D D D \
+     * 01 D D D D D D D D D D D D D  -> data for process 0
+     * 02 D D D D D D D D D D D D D /
+     * 03 D D D D D D D D D D D D D \
+     * 04 D D D D D D D D D D D D D  -> data for process 1
+     * 05 D D D D D D D D D D D D D /
+     * 06 D D D D D D D D D D D D D \
+     * 07 D D D D D D D D D D D D D  -> data for process 2
+     * 08 D D D D D D D D D D D D D /
+     * 09 D D D D D D D D D D D D D \
+     * 10 D D D D D D D D D D D D D  -> data for process 3
+     * 11 D D D D D D D D D D D D D /
+     */
     const int nr = num_rows / num_partitions;
     if (nr * num_partitions != num_rows) {
         std::stringstream ss;

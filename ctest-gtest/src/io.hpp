@@ -14,6 +14,7 @@ read_field(const std::string &filename);
 void write_field(const Field &field, const ParallelData &parallel,
                  std::string &&filename);
 
+// This corresponds to an input json file
 struct Input {
     std::string fname = "";
     std::string png_name_prefix = "heat_";

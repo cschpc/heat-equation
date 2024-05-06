@@ -14,6 +14,7 @@
 namespace heat{
 std::tuple<std::vector<double>, int, int>
 initialize(const Input &input, const ParallelData &parallel) {
+    // Read data and data size from a file or generate it
     auto [num_rows_global, num_cols_global, data] =
         input.read_file ? read_field(input.fname)
                         : generate_field(input.rows, input.cols);
@@ -26,28 +27,35 @@ initialize(const Input &input, const ParallelData &parallel) {
         std::cout << "Number of MPI tasks: " << parallel.size << std::endl;
     }
 
+    // Partition the global field evenly to processes
     auto [num_rows, num_cols] = Field::partition_domain(
         num_rows_global, num_cols_global, parallel.size);
 
+    // Scatter the data to processes and return local data and local size
     return std::make_tuple(scatter(std::move(data), num_rows * num_cols),
                            num_rows, num_cols);
 }
 
 void run(std::string &&fname) {
-    // Parallelization info
+    // ParalleleData contains MPI data
     ParallelData parallelization;
+    // Read the json file at fname to a structure
     const Input input = read_input(std::move(fname), parallelization.rank);
+    // Make simulation constants from the input. Contains time step and other
+    // constants
     const Constants constants(input);
 
-    // Temperature fields
+    // Read or generate temperature fields for each process
     auto [data, num_rows, num_cols] = initialize(input, parallelization);
     Field current(std::move(data), num_rows, num_cols);
+    // Initialize previous with current
     Field previous = current;
 
     // Output the initial field
     write_field(current, parallelization,
                 make_png_filename(input.png_name_prefix.c_str(), 0));
 
+    // Output the average temperature at start
     auto avg = average(current, parallelization);
     if (0 == parallelization.rank) {
         std::cout << std::fixed << std::setprecision(6);
@@ -59,9 +67,12 @@ void run(std::string &&fname) {
 
     // Time evolve
     for (int iter = 1; iter <= input.nsteps; iter++) {
+        // Get data to ghost layers from neighbor processes
         exchange(previous, parallelization);
+        // Compute new values from previous ones
         evolve(current, previous, constants);
 
+        // Write the field to a file periodically
         if (iter % input.image_interval == 0) {
             write_field(current, parallelization,
                         make_png_filename(input.png_name_prefix.c_str(), iter));
