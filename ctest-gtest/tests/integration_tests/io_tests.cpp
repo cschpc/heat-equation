@@ -33,5 +33,4 @@ TEST(io_test, read_field_data_from_file) {
     auto [num_rows, num_cols, data] = heat::read_field("testdata/bottle.dat");
     ASSERT_EQ(data.size(), 40000);
     ASSERT_EQ(num_rows * num_cols, data.size());
-    ASSERT_GT(data.size(), 0) << "data vector should contain some data";
 }
