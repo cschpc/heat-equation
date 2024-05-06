@@ -39,9 +39,6 @@ bool loadPng(const char *fname, PngData &png) {
     return false;
 }
 
-// TODO:
-// - gather/scatter
-// - proper multi process average
 TEST(integration_test, image_matches_reference_with_input) {
     heat::run("testdata/input.json");
 
