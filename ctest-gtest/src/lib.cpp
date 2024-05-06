@@ -9,10 +9,30 @@
 #include "field.hpp"
 #include "io.hpp"
 #include "parallel.hpp"
-#include "setup.hpp"
 #include "utilities.hpp"
 
 namespace heat{
+std::tuple<std::vector<double>, int, int>
+initialize(const Input &input, const ParallelData &parallel) {
+    auto [num_rows_global, num_cols_global, data] =
+        input.read_file ? read_field(input.fname)
+                        : generate_field(input.rows, input.cols);
+
+    if (0 == parallel.rank) {
+        std::cout << "Simulation parameters: "
+                  << "rows: " << num_rows_global
+                  << " columns: " << num_cols_global
+                  << " time steps: " << input.nsteps << std::endl;
+        std::cout << "Number of MPI tasks: " << parallel.size << std::endl;
+    }
+
+    auto [num_rows, num_cols] = Field::partition_domain(
+        num_rows_global, num_cols_global, parallel.size);
+
+    return std::make_tuple(scatter(std::move(data), num_rows * num_cols),
+                           num_rows, num_cols);
+}
+
 void run(std::string &&fname) {
     // Parallelization info
     ParallelData parallelization;
@@ -20,7 +40,8 @@ void run(std::string &&fname) {
     const Constants constants(input);
 
     // Temperature fields
-    Field current = initialize(input, parallelization);
+    auto [data, num_rows, num_cols] = initialize(input, parallelization);
+    Field current(std::move(data), num_rows, num_cols);
     Field previous = current;
 
     // Output the initial field

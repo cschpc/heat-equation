@@ -18,7 +18,6 @@ target_sources(
     io.cpp
     lib.cpp
     parallel.cpp
-    setup.cpp
     utilities.cpp
     "${common_dir}/pngwriter.c"
     )
