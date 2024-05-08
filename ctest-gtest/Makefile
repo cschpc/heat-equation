@@ -28,11 +28,8 @@ all:
 clean:
 	rm -rf $(build_dir_prefix) $(project_name)
 
-.ONESHELL:
 test: all
-	cd $(build_dir_prefix)/Release
-	ctest
-	cd ../..
+	ctest --test-dir $(build_dir_prefix)/Release
 
 .ONESHELL:
 debug:
