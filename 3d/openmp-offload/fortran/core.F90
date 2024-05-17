@@ -79,7 +79,11 @@ contains
     currdata => curr%data
     prevdata => prev%data
 
-    !$omp target teams distribute parallel do private(i, j, k) collapse(3)
+#ifdef LOOP
+    !$omp target loop private(i, j, k) collapse(3)
+#else
+    !$omp target teams distribute parallel do simd private(i, j, k) collapse(3)
+#endif
     !$acc parallel loop private(i,j,k) &
     !$acc present(prevdata(0:nx+1,0:ny+1,0:nz+1), currdata(0:nx+1,0:ny+1,0:nz+1)) collapse(3)
     do k = 1, nz
@@ -96,7 +100,11 @@ contains
           end do
        end do
     end do
-    !$omp end target teams distribute parallel do
+#ifdef LOOP
+    !$omp end target loop
+#else
+    !$omp end target teams distribute parallel do simd
+#endif
     !$acc end parallel loop
 
   end subroutine evolve

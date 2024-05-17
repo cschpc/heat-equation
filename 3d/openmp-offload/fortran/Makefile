@@ -26,7 +26,7 @@ endif
 ifeq ($(COMP),cray)
 FC=ftn
 CC=gcc
-FCFLAGS=-DDISABLE_PNG -O3 -DGPU_MPI -fopenmp
+FCFLAGS=-DDISABLE_PNG -O3 -DGPU_MPI -fopenmp #-DLOOP
 CCFLAGS=-Wall -I$(COMMONDIR) -g 
 LDFLAGS=-fopenmp -g -Wl,-rpath -Wl,${LD_LIBRARY_PATH}
 # LIBS=
