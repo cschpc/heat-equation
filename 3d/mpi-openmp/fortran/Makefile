@@ -11,7 +11,7 @@ FCFLAGS=-O3 -Wall -fopenmp
 FCFLAGS=-O3 -Wall 
 CCFLAGS=-O3 -Wall -I$(COMMONDIR)
 LDFLAGS=-fopenmp
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),cray)
@@ -20,7 +20,7 @@ CC=gcc
 FCFLAGS=-g -DDISABLE_PNG -DGPU_MPI -fopenmp
 CCFLAGS=-O3 -g -Wall -I$(COMMONDIR)
 LDFLAGS=-fopenmp
-# LIBS=-lpng
+# LIBS=
 endif
 
 EXE=heat_hybrid

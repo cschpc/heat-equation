@@ -9,7 +9,7 @@ CXX=pgCC
 CC=pgcc
 CCFLAGS=-g -O3 -fopenmp -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -17,7 +17,7 @@ CXX=g++
 CC=gcc
 CCFLAGS=-g -O3 -fopenmp -Wall -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),intel)
@@ -25,7 +25,7 @@ CXX=icpx
 CC=icx
 CCFLAGS=-g -O3 -fopenmp -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_serial

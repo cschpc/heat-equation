@@ -11,7 +11,7 @@ NVCC=nvcc -ccbin pgc++
 NVCCFLAGS=-g -O3 -I$(COMMONDIR)
 CCFLAGS=-g -O3 -I$(COMMONDIR)
 LDFLAGS=-L$(CUDA_INSTALL_ROOT)/lib64
-LIBS=-lpng -lcudart
+LIBS=-lcudart
 endif
 
 ifeq ($(COMP),gnu)
@@ -21,7 +21,7 @@ NVCC=nvcc
 NVCCFLAGS=-g -O3 -I$(COMMONDIR)
 CCFLAGS=-g -O3 -Wall -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng -lcudart
+LIBS=-lcudart
 endif
 
 EXE=heat_cuda

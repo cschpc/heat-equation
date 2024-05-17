@@ -9,7 +9,7 @@ CXX=mpicxx
 CC=pgcc
 CCFLAGS=-g -O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng 
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -20,7 +20,7 @@ CC=gcc
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp -DMPI_DATATYPES -DMPI_NEIGHBORHOOD
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),cray)
@@ -31,7 +31,7 @@ CC=cc
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp  -DMPI_DATATYPES -DMPI_NEIGHBORHOOD -DDISABLE_PNG
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
-# LIBS=-lpng
+# LIBS=
 endif
 
 
@@ -40,7 +40,7 @@ CXX=mpicxx
 CC=icc
 CCFLAGS=-g -O3 -xHost -I$(COMMONDIR) -DNDEBUG -qopenmp -DNO_MPI
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_hybrid

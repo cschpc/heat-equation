@@ -9,7 +9,7 @@ CXX=mpicxx
 CC=pgcc
 CCFLAGS=-g -O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng 
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -20,7 +20,7 @@ CC=gcc
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -fopenmp  -DMPI_DATATYPES -DMPI_NEIGHBORHOOD
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),cray)
@@ -33,7 +33,7 @@ OMPFLAGS=-fopenmp
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) -DNDEBUG -DDISABLE_PNG $(OMPFLAGS)
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=--rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64
-# LIBS=-lpng
+# LIBS=
 endif
 
 
@@ -42,7 +42,7 @@ CXX=mpicxx
 CC=gcc
 CCFLAGS=-g -O3 -I$(COMMONDIR) -DNDEBUG
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_offload

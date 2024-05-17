@@ -11,7 +11,7 @@ HIPCC=hipcc --x cu
 HIPFLAGS=-g -O3 -I$(COMMONDIR)
 CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) 
 LDFLAGS=
-LIBS=-lpng -lamdhip64 -lcudart
+LIBS=-lamdhip64 -lcudart
 endif
 
 EXE=heat_hip

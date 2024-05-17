@@ -9,7 +9,7 @@ CXX=mpicxx
 CC=pgcc
 CCFLAGS=-g -acc -O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -17,7 +17,7 @@ CXX=mpicxx
 CC=gcc
 CCFLAGS=-g -fopenmp -O3 -Wall -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng 
+LIBS=
 endif
 
 EXE=heat_openmp

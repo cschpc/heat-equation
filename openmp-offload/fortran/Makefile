@@ -10,7 +10,7 @@ CC=gcc
 FCFLAGS=-O3 -acc
 CCFLAGS=-O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -19,7 +19,7 @@ CC=gcc
 FCFLAGS=-O3 -Wall -fopenmp
 CCFLAGS=-O3 -Wall -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),cray)
@@ -28,7 +28,7 @@ CC=cc
 FCFLAGS=-DDISABLE_PNG -O3 -Wall -fopenmp
 CCFLAGS=-O3 -Wall -I$(COMMONDIR)
 LDFLAGS=
-#LIBS=-lpng
+#LIBS=
 endif
 
 EXE=heat_openmp

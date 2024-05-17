@@ -10,7 +10,7 @@ CC=gcc
 FCFLAGS=-O3 -acc
 CCFLAGS=-O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -20,7 +20,7 @@ CC=gcc
 FCFLAGS=-O3 -Wall 
 CCFLAGS=-O3 -Wall -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 ifeq ($(COMP),cray)
@@ -32,7 +32,7 @@ HIPFLAGS=-O3 -std=c++11 --offload-arch=gfx90a
 FCFLAGS=-O3 -DDISABLE_PNG -DGPU_MPI -hacc
 CCFLAGS=-O3 -Wall -I$(COMMONDIR)
 LDFLAGS=-hacc # -lamdhip64
-# LIBS=-lpng
+# LIBS=
 endif
 
 EXE=heat_openacc_hip

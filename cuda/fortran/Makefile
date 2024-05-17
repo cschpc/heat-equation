@@ -10,7 +10,7 @@ CC=gcc
 FCFLAGS=-O3 
 CCFLAGS=-O3 -I$(COMMONDIR)
 LDFLAGS=-Mcuda -L$(CUDA_INSTALL_ROOT)/lib64
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_cuda

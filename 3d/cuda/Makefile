@@ -9,7 +9,7 @@ CXX=mpicxx
 CC=pgcc
 CCFLAGS=-g -O3 -I$(COMMONDIR)
 LDFLAGS=
-LIBS=-lpng 
+LIBS=
 endif
 
 ifeq ($(COMP),gnu)
@@ -25,7 +25,7 @@ NVCCFLAGS=-g -O3 -I$(COMMONDIR) $(GPU_MEMORY)
 CCFLAGS=-g -O3 -march=native -I$(COMMONDIR) $(GPU_MEMORY) -DNDEBUG -fopenmp # -DMPI_DATATYPES
 # CCFLAGS=-g -O3 -Wall -I$(COMMONDIR) -DNDEBUG -fno-tree-vectorize
 LDFLAGS=
-LIBS=-lpng -lcudart
+LIBS=-lcudart
 endif
 
 ifeq ($(COMP),intel)
@@ -33,7 +33,7 @@ CXX=mpicxx
 CC=gcc
 CCFLAGS=-g -O3 -I$(COMMONDIR) -DNDEBUG
 LDFLAGS=
-LIBS=-lpng
+LIBS=
 endif
 
 EXE=heat_cuda

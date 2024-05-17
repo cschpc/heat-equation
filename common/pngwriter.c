@@ -1,8 +1,10 @@
-#include <png.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include "stb_image_write.h"
+
 #include "pngwriter.h"
+#include <stdlib.h>
 
 /* Datatype for RGB pixel */
 typedef struct {
@@ -10,10 +12,6 @@ typedef struct {
     uint8_t green;
     uint8_t blue;
 } pixel_t;
-
-
-void cmap(double value, const double scaling, const double maxval,
-          pixel_t *pix);
 
 static int heat_colormap[256][3] = {
     {59, 76, 192}, {59, 76, 192}, {60, 78, 194}, {61, 80, 195},
@@ -82,6 +80,32 @@ static int heat_colormap[256][3] = {
     {185, 22, 41}, {183, 17, 40}, {182, 11, 39}, {180, 4, 38}
 };
 
+/*
+ * This routine sets the RGB values for the pixel_t structure using
+ * the colormap data heat_colormap. If the value is outside the
+ * acceptable png values 0, 255 blue or red color is used instead.
+ */
+pixel_t cmap(double value, const double scaling, const double offset) {
+    int ival;
+
+    pixel_t pix = {};
+    ival = (int)(value * scaling + offset);
+    if (ival < 0) { /* Colder than colorscale, substitute blue */
+        pix.red = 0;
+        pix.green = 0;
+        pix.blue = 255;
+    } else if (ival > 255) {
+        pix.red = 255; /* Hotter than colormap, substitute red */
+        pix.green = 0;
+        pix.blue = 0;
+    } else {
+        pix.red = heat_colormap[ival][0];
+        pix.green = heat_colormap[ival][1];
+        pix.blue = heat_colormap[ival][2];
+    }
+
+    return pix;
+}
 
 /*
  * Save the two dimensional array as a png image
@@ -94,128 +118,46 @@ static int heat_colormap[256][3] = {
  *                  layout. That is, if 'f' is given, then rows
  *                  and columns are swapped.
  */
-int save_png(double *data, const int height, const int width,
-             const char *fname, const char lang)
-{
-    FILE *fp;
-    png_structp pngstruct_ptr = NULL;
-    png_infop pnginfo_ptr = NULL;
-    png_byte **row_pointers = NULL;
-    int i, j;
 
-    /* Default return status is failure */
-    int status = -1;
+uint8_t *bytes_from_data(const double *data, const int height, const int width,
+                         const int num_channels, const char *fname,
+                         const char lang) {
+    const int c_layout = lang == 'c' || lang == 'C';
+    const size_t num_bytes = height * width * num_channels;
+    uint8_t *bytes = (uint8_t *)malloc(num_bytes);
 
-    int pixel_size = 3;
-    int depth = 8;
+    size_t k = 0;
+    for (size_t i = 0; i < height; i++) {
+        for (size_t j = 0; j < width; j++) {
+            const size_t index = c_layout ? i * width + j : i + j * height;
 
-    /* Open the file and initialize the png library.
-     * Note that in error cases we jump to clean up
-     * parts in the end of this function using goto. */
-    fp = fopen(fname, "wb");
-    if (fp == NULL) {
-        goto fopen_failed;
-    }
-
-    pngstruct_ptr =
-        png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-
-    if (pngstruct_ptr == NULL) {
-        goto pngstruct_create_failed;
-    }
-
-    pnginfo_ptr = png_create_info_struct(pngstruct_ptr);
-
-    if (pnginfo_ptr == NULL) {
-        goto pnginfo_create_failed;
-    }
-
-    if (setjmp(png_jmpbuf(pngstruct_ptr))) {
-        goto setjmp_failed;
-    }
-
-    png_set_IHDR(pngstruct_ptr, pnginfo_ptr, (size_t) width,
-                 (size_t) height, depth, PNG_COLOR_TYPE_RGB,
-                 PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-
-    row_pointers = png_malloc(pngstruct_ptr, height * sizeof(png_byte *));
-
-    for (i = 0; i < height; i++) {
-        png_byte *row = png_malloc(pngstruct_ptr,
-                                   sizeof(uint8_t) * width * pixel_size);
-        row_pointers[i] = row;
-
-        /* Branch according to the memory layout */
-        if (lang == 'c' || lang == 'C') {
-            for (j = 0; j < width; j++) {
-                pixel_t pixel;
-                /* Scale the values so that values between 0 and
-                 * 100 degrees are mapped to values between 0 and 255 */
-                cmap(data[j + i * width], 2.55, 0.0, &pixel);
-                *row++ = pixel.red;
-                *row++ = pixel.green;
-                *row++ = pixel.blue;
-            }
-        } else if (lang == 'f' || lang == 'F') {
-            for (j = 0; j < width; j++) {
-                pixel_t pixel;
-                cmap(data[i + j * height], 2.55, 0.0, &pixel);
-                *row++ = pixel.red;
-                *row++ = pixel.green;
-                *row++ = pixel.blue;
-            }
-        } else {
-            fprintf(stderr, "Unknown memory order %c for pngwriter!\n", lang);
-            exit(EXIT_FAILURE);
+            /* Scale the values so that values between 0 and
+             * 100 degrees are mapped to values between 0 and 255 */
+            const pixel_t pixel = cmap(data[index], 2.55, 0.0);
+            bytes[0 + k * num_channels] = pixel.red;
+            bytes[1 + k * num_channels] = pixel.green;
+            bytes[2 + k * num_channels] = pixel.blue;
+            k++;
         }
     }
 
-    png_init_io(pngstruct_ptr, fp);
-    png_set_rows(pngstruct_ptr, pnginfo_ptr, row_pointers);
-    png_write_png(pngstruct_ptr, pnginfo_ptr,
-                  PNG_TRANSFORM_IDENTITY, NULL);
+    return bytes;
+}
 
-    status = 0;
+int save_png(const double *data, const int height, const int width,
+             const char *fname, const char lang) {
+    const size_t num_channels = 3;
+    uint8_t *bytes =
+        bytes_from_data(data, height, width, num_channels, fname, lang);
+    int status = !stbi_write_png(fname, width, height, num_channels, bytes,
+                                 num_channels * width);
+    free(bytes);
 
-    for (i = 0; i < height; i++) {
-        png_free(pngstruct_ptr, row_pointers[i]);
-    }
-    png_free(pngstruct_ptr, row_pointers);
-
-    /* Cleanup with labels */
-setjmp_failed:
-pnginfo_create_failed:
-    png_destroy_write_struct(&pngstruct_ptr, &pnginfo_ptr);
-pngstruct_create_failed:
-    fclose(fp);
-fopen_failed:
     return status;
 }
 
-/*
- * This routine sets the RGB values for the pixel_t structure using
- * the colormap data heat_colormap. If the value is outside the
- * acceptable png values 0, 255 blue or red color is used instead.
- */
-void cmap(double value, const double scaling, const double offset,
-          pixel_t *pix)
-{
-    int ival;
-
-    ival = (int)(value * scaling + offset);
-    if (ival < 0) {             /* Colder than colorscale, substitute blue */
-        pix->red = 0;
-        pix->green = 0;
-        pix->blue = 255;
-    } else if (ival > 255) {
-        pix->red = 255;         /* Hotter than colormap, substitute red */
-        pix->green = 0;
-        pix->blue = 0;
-    } else {
-        pix->red = heat_colormap[ival][0];
-        pix->green = heat_colormap[ival][1];
-        pix->blue = heat_colormap[ival][2];
-    }
+uint8_t *load_png(const char *fname, int *height, int *width, int *channels) {
+    return stbi_load(fname, height, width, channels, 0);
 }
 
+void release_png(void *data) { stbi_image_free(data); }
