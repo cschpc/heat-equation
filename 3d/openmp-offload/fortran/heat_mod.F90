@@ -128,7 +128,7 @@ contains
 #ifdef _OPENACC
     call acc_set_device_num(my_device, acc_get_device_type())
 #else
-    call omp_set_default_device(node_rank)
+    call omp_set_default_device(my_device)
 #endif
 #endif
 
