@@ -25,6 +25,7 @@ module heat
      integer :: rank
      integer :: nleft, nright  ! Ranks of neighbouring MPI tasks
      integer :: dev_count
+     integer :: requests(4)    ! MPI requests
   end type parallel_data
 
 contains
