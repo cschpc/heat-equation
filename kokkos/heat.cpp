@@ -25,9 +25,6 @@ void Field::generate(ParallelData parallel) {
     // Radius of the source disc 
     auto radius = nx_full / 6.0;
 
-    //Kokkos::View<double**, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-    //   temperature_view (temperature.data(), nx + 2, ny + 2);
-
     using MDPolicyType2D = Kokkos::MDRangePolicy<Kokkos::Rank<2> >;
     MDPolicyType2D mdpolicy_2d({0, 0}, {nx + 2, ny + 2}); 
 

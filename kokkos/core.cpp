@@ -6,29 +6,79 @@
 #include <Kokkos_Core.hpp>
 
 // Exchange the boundary values
-void exchange(Field& field, const ParallelData parallel)
+void exchange(Field& field, ParallelData parallel)
 {
-
+    double* s_ptr;
+    double* r_ptr;
+  
     // Send to up, receive from down
-    auto sbuf = Kokkos::subview (field.temperature, 1, Kokkos::ALL).data();
-    auto rbuf = Kokkos::subview (field.temperature, field.nx + 1, Kokkos::ALL).data();
-    MPI_Sendrecv(sbuf, field.ny + 2, MPI_DOUBLE,
+    auto sview = Kokkos::subview (field.temperature, 1, Kokkos::ALL);
+    auto rview = Kokkos::subview (field.temperature, field.nx + 1, Kokkos::ALL);
+
+    if (parallel.pack_data) {
+      if (parallel.nup != MPI_PROC_NULL) {
+        Kokkos::parallel_for("pack buffers", field.ny + 2, 
+           KOKKOS_LAMBDA(const int i) {
+           parallel.sbuf(i) = sview(i);
+         });
+        Kokkos::fence();
+      }
+      s_ptr = parallel.sbuf.data();
+      r_ptr = parallel.rbuf.data();
+    } else {
+      s_ptr = sview.data();
+      r_ptr = rview.data();
+    }
+
+    MPI_Sendrecv(s_ptr, field.ny + 2, MPI_DOUBLE,
                  parallel.nup, 11,
-                 rbuf, field.ny + 2, MPI_DOUBLE, 
+                 r_ptr, field.ny + 2, MPI_DOUBLE, 
                  parallel.ndown, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+    if (parallel.pack_data && (parallel.ndown != MPI_PROC_NULL)) {
+      Kokkos::parallel_for("unpack buffers", field.ny + 2, 
+         KOKKOS_LAMBDA(const int i) {
+           rview(i) = parallel.rbuf(i);
+        });
+      Kokkos::fence();
+    }
+
     // Send to down, receive from up
-    sbuf = Kokkos::subview (field.temperature, 
-                                    field.nx,
-                                    Kokkos::ALL).data();
-    rbuf = field.temperature.data();
-    MPI_Sendrecv(sbuf, field.ny + 2, MPI_DOUBLE, 
+    sview = Kokkos::subview (field.temperature, field.nx, Kokkos::ALL);
+    rview = Kokkos::subview (field.temperature, 0, Kokkos::ALL);
+
+    if (parallel.pack_data) {
+      if (parallel.ndown != MPI_PROC_NULL) {
+        Kokkos::parallel_for("pack buffers", field.ny + 2, 
+           KOKKOS_LAMBDA(const int i) {
+             parallel.sbuf(i) = field.temperature(field.nx, i);
+         });
+        Kokkos::fence();
+      }
+      s_ptr = parallel.sbuf.data();
+      r_ptr = parallel.rbuf.data();
+    } else {
+      s_ptr = sview.data();
+      r_ptr = rview.data();
+    }
+
+    MPI_Sendrecv(s_ptr, field.ny + 2, MPI_DOUBLE, 
                  parallel.ndown, 12,
-                 rbuf, field.ny + 2, MPI_DOUBLE,
+                 r_ptr, field.ny + 2, MPI_DOUBLE,
                  parallel.nup, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    if (parallel.pack_data && (parallel.nup != MPI_PROC_NULL)) {
+      Kokkos::parallel_for("unpack buffers", field.ny + 2, 
+         KOKKOS_LAMBDA(const int i) {
+           rview(i) = parallel.rbuf(i);
+         });
+      Kokkos::fence();
+    }
 }
 
 struct evolveFunctor {
+  //Kokkos::View<double**, Kokkos::LayoutLeft> curr; 
+  //Kokkos::View<double**, Kokkos::LayoutLeft> prev; 
   Kokkos::View<double**> curr; 
   Kokkos::View<double**> prev; 
   const double a;

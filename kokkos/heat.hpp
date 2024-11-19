@@ -5,11 +5,15 @@
 
 // Class for basic parallelization information
 struct ParallelData {
-    int size;            // Number of MPI tasks
+    int size;                     // Number of MPI tasks
     int rank;
-    int nup, ndown;      // Ranks of neighbouring MPI tasks
+    int nup, ndown;               // Ranks of neighbouring MPI tasks
+    Kokkos::View<double*>  sbuf;
+    Kokkos::View<double*>  rbuf;
+    bool pack_data;
 
-    ParallelData();      // Constructor
+    ParallelData();      
+    void set_buffers(const int ny);
 };
 
 // Class for temperature field
@@ -40,9 +44,9 @@ struct Field {
 
 // Function declarations
 void initialize(int argc, char *argv[], Field& current,
-                Field& previous, int& nsteps, ParallelData parallel);
+                Field& previous, int& nsteps, ParallelData& parallel);
 
-void exchange(Field& field, const ParallelData parallel);
+void exchange(Field& field, ParallelData parallel);
 
 void evolve(Field& curr, Field& prev, const double a, const double dt);
 

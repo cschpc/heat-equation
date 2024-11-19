@@ -1,5 +1,6 @@
 #include "heat.hpp"
 #include <mpi.h>
+#include <Kokkos_Core.hpp>
 
 ParallelData::ParallelData() {
 
@@ -15,4 +16,16 @@ ParallelData::ParallelData() {
     if (ndown > size - 1) {
         ndown = MPI_PROC_NULL;
     }
+
+    // Check if default layout is Left
+    pack_data = std::is_same<Kokkos::LayoutLeft, Kokkos::View<double**>::array_layout>::value;
+}
+
+void ParallelData::set_buffers(const int ny) {
+
+  // Allocate buffers for LayoutLeft
+  if (pack_data) { 
+    sbuf = Kokkos::View<double*>("send buffer", ny + 2); 
+    rbuf = Kokkos::View<double*>("recv buffer", ny + 2); 
+  }
 }

@@ -5,7 +5,7 @@
 #include <Kokkos_Core.hpp>
 
 void initialize(int argc, char *argv[], Field& current,
-                Field& previous, int& nsteps, ParallelData parallel)
+                Field& previous, int& nsteps, ParallelData& parallel)
 {
     /*
      * Following combinations of command line arguments are possible:
@@ -66,6 +66,9 @@ void initialize(int argc, char *argv[], Field& current,
     // copy "previous" field also to "current"
     current.setup(previous.nx_full, previous.ny_full, parallel);
     Kokkos::deep_copy(current.temperature, previous.temperature);
+
+    // Set send and receive buffers
+    parallel.set_buffers(previous.ny);
 
     if (0 == parallel.rank) {
         std::cout << "Simulation parameters: " 
