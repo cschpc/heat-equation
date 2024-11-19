@@ -25,7 +25,7 @@ endif
 
 EXE=heat_hybrid
 OBJS=main.o heat_mod.o core.o setup.o utilities.o io.o
-# OBJS_PNG=$(COMMONDIR)/pngwriter.o pngwriter_mod.o
+OBJS_PNG=$(COMMONDIR)/pngwriter.o pngwriter_mod.o
 
 all: $(EXE)
 
