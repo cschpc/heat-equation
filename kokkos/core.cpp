@@ -77,8 +77,6 @@ void exchange(Field& field, ParallelData parallel)
 }
 
 struct evolveFunctor {
-  //Kokkos::View<double**, Kokkos::LayoutLeft> curr; 
-  //Kokkos::View<double**, Kokkos::LayoutLeft> prev; 
   Kokkos::View<double**> curr; 
   Kokkos::View<double**> prev; 
   const double a;
@@ -109,3 +107,25 @@ void evolve(Field& curr, Field& prev, const double a, const double dt)
 
   Kokkos::parallel_for("evolve", mdpolicy, evolveFunctor(curr, prev, a, dt));
 }
+
+// Update the temperature values using five-point stencil */
+void evolve_lambda(Field& curr, Field& prev, const double a, const double dt)
+{
+
+  auto inv_dx2 = 1.0 / (prev.dx * prev.dx);
+  auto inv_dy2 = 1.0 / (prev.dx * prev.dx);
+
+  using MDPolicyType = Kokkos::MDRangePolicy<Kokkos::Rank<2> >;
+  MDPolicyType mdpolicy({1, 1}, {curr.nx + 1, curr.ny + 1});
+
+  auto curr_temp = curr.temperature;
+  auto prev_temp = prev.temperature;
+
+  Kokkos::parallel_for("evolve", mdpolicy,
+     KOKKOS_LAMBDA(const int i, const int j) {
+        curr_temp(i, j) = prev_temp(i, j) + a * dt * (
+        ( prev_temp(i + 1, j) - 2.0 * prev_temp(i, j) + prev_temp(i - 1, j) ) * inv_dx2 +
+        ( prev_temp(i, j + 1) - 2.0 * prev_temp(i, j) + prev_temp(i, j - 1) ) * inv_dy2);
+  });
+}
+
