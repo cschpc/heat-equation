@@ -18,7 +18,8 @@ ParallelData::ParallelData() {
     }
 
     // Check if default layout is Left
-    pack_data = std::is_same<Kokkos::LayoutLeft, Kokkos::View<double**>::array_layout>::value;
+    pack_data = std::is_same_v<Kokkos::DefaultExecutionSpace::array_layout, 
+                               Kokkos::LayoutLeft>;
 }
 
 void ParallelData::set_buffers(const int ny) {
