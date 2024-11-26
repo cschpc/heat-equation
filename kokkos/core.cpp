@@ -106,6 +106,8 @@ void evolve(Field& curr, Field& prev, const double a, const double dt)
   MDPolicyType mdpolicy({1, 1}, {curr.nx + 1, curr.ny + 1});
 
   Kokkos::parallel_for("evolve", mdpolicy, evolveFunctor(curr, prev, a, dt));
+
+  Kokkos::fence();
 }
 
 // Update the temperature values using five-point stencil */
@@ -127,5 +129,7 @@ void evolve_lambda(Field& curr, Field& prev, const double a, const double dt)
         ( prev_temp(i + 1, j) - 2.0 * prev_temp(i, j) + prev_temp(i - 1, j) ) * inv_dx2 +
         ( prev_temp(i, j + 1) - 2.0 * prev_temp(i, j) + prev_temp(i, j - 1) ) * inv_dy2);
   });
+
+  Kokkos::fence();
 }
 
