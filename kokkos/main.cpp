@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     initialize(argc, argv, current, previous, nsteps, parallelization);
 
     // Output the initial field
-    write_field(current, 0, parallelization);
+    //write_field(current, 0, parallelization);
 
     auto average_temp = average(current);
     if (0 == parallelization.rank) {
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
     }
 
     // Output the final field
-    write_field(previous, nsteps, parallelization);
+    //write_field(previous, nsteps, parallelization);
 
 }
     Kokkos::finalize();
