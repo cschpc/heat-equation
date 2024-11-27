@@ -5,47 +5,45 @@ ifndef KOKKOS_PATH
 endif
 
 ifeq ($(COMP),)
-COMP=gnu
+COMP=cuda
 endif
 
 COMMONDIR=../common
 
-ifeq ($(COMP),pgi)
+ifeq ($(COMP),cuda)
 CXX=mpicxx
-CC=pgcc
-CCFLAGS=-g -O3 -I$(COMMONDIR)
-LDFLAGS=
-LIBS=-lpng 
-endif
-
-ifeq ($(COMP),gnu)
-CXX=mpicxx
+export OMPI_CXX=${KOKKOS_PATH}/bin/nvcc_wrapper
 CC=gcc
+CXXFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG
 CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG
 #CCFLAGS=-g -O0 -march=native -Wall -I$(COMMONDIR) 
 LDFLAGS=
 LIBS=-lpng
+
+KOKKOS_DEVICES = "Cuda"
+KOKKOS_ARCH = "Ampere80"
 endif
 
-ifeq ($(COMP),intel)
-CXX=mpicxx
+ifeq ($(COMP),hip)
+CXX=CC
 CC=gcc
-CCFLAGS=-g -O3 -I$(COMMONDIR) -DNDEBUG
+CXXFLAGS=-x hip -g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG
+CCFLAGS=-g -O3 -march=native -Wall -I$(COMMONDIR) -DNDEBUG
+#CCFLAGS=-g -O0 -march=native -Wall -I$(COMMONDIR) 
 LDFLAGS=
 LIBS=-lpng
+
+KOKKOS_DEVICES = "HIP"
+KOKKOS_ARCH = "AMD_GFX90A"
 endif
 
-KOKKOS_DEVICES = "OpenMP"
-KOKKOS_ARCH = "Zen2"
 include $(KOKKOS_PATH)/Makefile.kokkos
 
-EXE=heat_mpi
+EXE=heat_kokkos
 OBJS=main.o heat.o core.o parallel.o setup.o io.o utilities.o
 OBJS_PNG=$(COMMONDIR)/pngwriter.o
 
-
 all: $(EXE)
-
 
 utilities.o: utilities.cpp heat.hpp
 heat.o: heat.cpp heat.hpp matrix.hpp
@@ -62,7 +60,7 @@ $(EXE): $(OBJS) $(OBJS_PNG) $(KOKKOS_LINK_DEPENDS)
 	$(CXX) $(CCFLAGS) $(OBJS) $(OBJS_PNG) -o $@ $(LDFLAGS) $(LIBS) $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS)
 
 %.o: %.cpp
-	$(CXX) $(CCFLAGS) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) -c $< -o $@
 
 %.o: %.c
 	$(CC) $(CCFLAGS) -c $< -o $@
@@ -72,4 +70,4 @@ allclean: kokkos-clean
 	-/bin/rm -f $(EXE) a.out *.o *.png *~
 
 clean: 
-	-/bin/rm -f $(EXE) a.out *.o *.png *~
+	-/bin/rm -f $(EXE) a.out $(OBJS) $(OBJS_PNG) *.png *~
