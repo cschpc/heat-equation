@@ -29,7 +29,7 @@ void Field::generate(ParallelData parallel) {
     MDPolicyType2D mdpolicy_2d({0, 0}, {nx + 2, ny + 2}); 
 
     Kokkos::parallel_for("generate_center", mdpolicy_2d, 
-      KOKKOS_LAMBDA(const int i, const int j) {
+      KOKKOS_CLASS_LAMBDA(const int i, const int j) {
             // Distance of point i, j from the origin 
             auto dx = i + parallel.rank * nx - nx_full / 2 + 1;
             auto dy = j - ny / 2 + 1;
@@ -42,7 +42,7 @@ void Field::generate(ParallelData parallel) {
 
     // Boundary conditions
     Kokkos::parallel_for("generate_x_boundary", nx + 2,
-      KOKKOS_LAMBDA(const int i) {
+      KOKKOS_CLASS_LAMBDA(const int i) {
         // Left
         temperature(i, 0) = 20.0;
         // Right
@@ -52,14 +52,14 @@ void Field::generate(ParallelData parallel) {
     // Top
     if (0 == parallel.rank) {
       Kokkos::parallel_for("generate_x_boundary", ny + 2,
-        KOKKOS_LAMBDA(const int j) {
+        KOKKOS_CLASS_LAMBDA(const int j) {
             temperature(0, j) = 85.0;
         });
     }
     // Bottom
     if (parallel.rank == parallel.size - 1) {
       Kokkos::parallel_for("generate_x_boundary", ny + 2,
-        KOKKOS_LAMBDA(const int j) {
+        KOKKOS_CLASS_LAMBDA(const int j) {
             temperature(nx + 1, j) = 5.0;
         });
     }
