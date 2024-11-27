@@ -17,10 +17,7 @@ void exchange(Field& field, ParallelData parallel)
 
     if (parallel.pack_data) {
       if (parallel.nup != MPI_PROC_NULL) {
-        Kokkos::parallel_for("pack buffers", field.ny + 2, 
-           KOKKOS_LAMBDA(const int i) {
-           parallel.sbuf(i) = sview(i);
-         });
+        Kokkos::deep_copy(parallel.sbuf, sview);
         Kokkos::fence();
       }
       s_ptr = parallel.sbuf.data();
@@ -36,10 +33,7 @@ void exchange(Field& field, ParallelData parallel)
                  parallel.ndown, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     if (parallel.pack_data && (parallel.ndown != MPI_PROC_NULL)) {
-      Kokkos::parallel_for("unpack buffers", field.ny + 2, 
-         KOKKOS_LAMBDA(const int i) {
-           rview(i) = parallel.rbuf(i);
-        });
+      Kokkos::deep_copy(rview, parallel.rbuf);
       Kokkos::fence();
     }
 
@@ -49,10 +43,7 @@ void exchange(Field& field, ParallelData parallel)
 
     if (parallel.pack_data) {
       if (parallel.ndown != MPI_PROC_NULL) {
-        Kokkos::parallel_for("pack buffers", field.ny + 2, 
-           KOKKOS_LAMBDA(const int i) {
-             parallel.sbuf(i) = field.temperature(field.nx, i);
-         });
+        Kokkos::deep_copy(parallel.sbuf, sview);
         Kokkos::fence();
       }
       s_ptr = parallel.sbuf.data();
@@ -68,10 +59,7 @@ void exchange(Field& field, ParallelData parallel)
                  parallel.nup, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     if (parallel.pack_data && (parallel.nup != MPI_PROC_NULL)) {
-      Kokkos::parallel_for("unpack buffers", field.ny + 2, 
-         KOKKOS_LAMBDA(const int i) {
-           rview(i) = parallel.rbuf(i);
-         });
+      Kokkos::deep_copy(rview, parallel.rbuf);
       Kokkos::fence();
     }
 }
