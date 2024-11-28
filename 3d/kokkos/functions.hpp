@@ -8,7 +8,15 @@ void initialize(int argc, char *argv[], Field& current,
 
 void exchange(Field& field, ParallelData& parallel);
 
+void exchange_init(Field& field, ParallelData& parallel);
+
+void exchange_finalize(Field& field, ParallelData& parallel);
+
 void evolve(Field& curr, const Field& prev, const double a, const double dt);
+
+void evolve_interior(Field& curr, const Field& prev, const double a, const double dt);
+
+void evolve_edges(Field& curr, const Field& prev, const double a, const double dt);
 
 void write_field(Field& field, const int iter, const ParallelData& parallel);
 

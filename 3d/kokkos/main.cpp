@@ -76,11 +76,17 @@ int main(int argc, char **argv)
 
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
+        start_comp = timer();
+        evolve_interior(current, previous, a, dt);
+        t_comp += timer() - start_comp;
         start_mpi = timer();
-        exchange(previous, parallelization);
+        exchange_init(previous, parallelization);
+        t_mpi += timer() - start_mpi;
+        start_mpi = timer();
+        exchange_finalize(previous, parallelization);
         t_mpi += timer() - start_mpi;
         start_comp = timer();
-        evolve(current, previous, a, dt);
+        evolve_edges(current, previous, a, dt);
         t_comp += timer() - start_comp;
         // if (iter % image_interval == 0) {
             // write_field(current, iter, parallelization);

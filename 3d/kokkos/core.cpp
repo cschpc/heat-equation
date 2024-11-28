@@ -6,10 +6,14 @@
 
 #ifndef NO_MPI
 #include <mpi.h>
+#endif
 
 // Communicate with manual packing to/from send/receive buffers
-void exchange_packing(Field& field, ParallelData& parallel)
+void exchange_init(Field& field, ParallelData& parallel)
 {
+#ifdef NO_MPI
+     return;
+#endif
     size_t buf_size[3];
     double *sbuf, *rbuf;
 
@@ -67,6 +71,16 @@ void exchange_packing(Field& field, ParallelData& parallel)
               parallel.ngbrs[d][i], 11, parallel.comm, &parallel.requests[nreq]);
         nreq++;
       }
+}
+
+void exchange_finalize(Field& field, ParallelData& parallel)
+{
+#ifdef NO_MPI
+     return;
+#endif
+
+    // use explicit execution space to enable asynchronous copies
+    auto ex = Kokkos::DefaultExecutionSpace();
 
     MPI_Waitall(12, parallel.requests, MPI_STATUSES_IGNORE);
 
@@ -100,9 +114,7 @@ void exchange_packing(Field& field, ParallelData& parallel)
 
     // Synchronize copies
     Kokkos::fence();
-
 }
-#endif
 
 
 // Exchange the boundary values
@@ -111,7 +123,8 @@ void exchange(Field& field, ParallelData& parallel)
 #ifdef NO_MPI
     return;
 #else
-    exchange_packing(field, parallel);
+    exchange_init(field, parallel);
+    exchange_finalize(field, parallel);
 #endif
 }
     
@@ -137,6 +150,107 @@ void evolve(Field& curr, const Field& prev, const double a, const double dt)
   // are not updated.
   Kokkos::parallel_for("evolve", mdpolicy,
      KOKKOS_LAMBDA(const int i, const int j, const int k) {
+            curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
+	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
+	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
+	        ( prev_temp(i, j, k + 1) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j, k - 1) ) * inv_dz2 
+               );
+      });
+
+  Kokkos::fence();
+
+}
+
+void evolve_interior(Field& curr, const Field& prev, const double a, const double dt)
+{
+
+  // Compilers do not necessarily optimize division to multiplication, so make it explicit
+  auto inv_dx2 = 1.0 / (prev.dx * prev.dx);
+  auto inv_dy2 = 1.0 / (prev.dy * prev.dy);
+  auto inv_dz2 = 1.0 / (prev.dz * prev.dz);
+
+  // Direct "View"s are needed for the lambda
+  auto curr_temp = curr.temperature;
+  auto prev_temp = prev.temperature;
+
+  using MDPolicyType = Kokkos::MDRangePolicy<Kokkos::Rank<3> >;
+  MDPolicyType mdpolicy({2, 2, 2}, {curr.nx, curr.ny, curr.nz});
+
+  // Determine the temperature field at next time step
+  // As we have fixed boundary conditions, the outermost gridpoints
+  // are not updated.
+  Kokkos::parallel_for("evolve_interior", mdpolicy,
+     KOKKOS_LAMBDA(const int i, const int j, const int k) {
+            curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
+	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
+	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
+	        ( prev_temp(i, j, k + 1) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j, k - 1) ) * inv_dz2 
+               );
+      });
+
+}
+
+void evolve_edges(Field& curr, const Field& prev, const double a, const double dt)
+{
+
+  // Compilers do not necessarily optimize division to multiplication, so make it explicit
+  auto inv_dx2 = 1.0 / (prev.dx * prev.dx);
+  auto inv_dy2 = 1.0 / (prev.dy * prev.dy);
+  auto inv_dz2 = 1.0 / (prev.dz * prev.dz);
+
+  // Direct "View"s are needed for the lambda
+  auto curr_temp = curr.temperature;
+  auto prev_temp = prev.temperature;
+
+  using MDPolicyType = Kokkos::MDRangePolicy<Kokkos::Rank<2> >;
+
+  MDPolicyType mdpolicy_z({1, 1}, {curr.nx + 1, curr.ny + 1});
+
+  Kokkos::parallel_for("evolve_z_edges", mdpolicy_z,
+     KOKKOS_LAMBDA(const int i, const int j) {
+            int k = 1;
+            curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
+	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
+	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
+	        ( prev_temp(i, j, k + 1) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j, k - 1) ) * inv_dz2 
+               );
+            k = curr.nz;
+            curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
+	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
+	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
+	        ( prev_temp(i, j, k + 1) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j, k - 1) ) * inv_dz2 
+               );
+      });
+
+  MDPolicyType mdpolicy_y({1, 1}, {curr.nx + 1, curr.nz + 1});
+
+  Kokkos::parallel_for("evolve_y_edges", mdpolicy_y,
+     KOKKOS_LAMBDA(const int i, const int k) {
+            int j = 1;
+            curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
+	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
+	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
+	        ( prev_temp(i, j, k + 1) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j, k - 1) ) * inv_dz2 
+               );
+            j = curr.ny;
+            curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
+	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
+	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
+	        ( prev_temp(i, j, k + 1) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j, k - 1) ) * inv_dz2 
+               );
+      });
+
+  MDPolicyType mdpolicy_x({1, 1}, {curr.ny + 1, curr.nz + 1});
+
+  Kokkos::parallel_for("evolve_x_edges", mdpolicy_x,
+     KOKKOS_LAMBDA(const int j, const int k) {
+            int i = 1;
+            curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
+	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
+	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
+	        ( prev_temp(i, j, k + 1) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j, k - 1) ) * inv_dz2 
+               );
+            i = curr.nx;
             curr_temp(i, j, k) = prev_temp(i, j, k) + a * dt * (
 	        ( prev_temp(i + 1, j, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i - 1, j, k) ) * inv_dx2 +
 	        ( prev_temp(i, j + 1, k) - 2.0 * prev_temp(i, j, k) + prev_temp(i, j - 1, k) ) * inv_dy2 +
