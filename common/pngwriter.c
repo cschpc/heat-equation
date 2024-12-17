@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 CSC - IT Center for Science Ltd. <www.csc.fi>
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

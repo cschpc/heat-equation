@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 CSC - IT Center for Science Ltd. <www.csc.fi>
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #ifndef PNGWRITER_H_
 #define PNGWRITER_H_
 

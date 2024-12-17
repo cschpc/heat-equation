@@ -1,3 +1,7 @@
+! SPDX-FileCopyrightText: 2021 CSC - IT Center for Science Ltd. <www.csc.fi>
+!
+! SPDX-License-Identifier: MIT
+
 ! Field metadata for heat equation solver
 module heat
   use iso_fortran_env, only : REAL64

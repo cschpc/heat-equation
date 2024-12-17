@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 CSC - IT Center for Science Ltd. <www.csc.fi>
+//
+// SPDX-License-Identifier: MIT
+
 #include "heat.hpp"
 #include <mpi.h>
 

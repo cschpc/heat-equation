@@ -1,3 +1,7 @@
+! SPDX-FileCopyrightText: 2021 CSC - IT Center for Science Ltd. <www.csc.fi>
+!
+! SPDX-License-Identifier: MIT
+
 ! Utility routines for heat equation solver
 !   NOTE: This file does not need to be edited!
 module utilities

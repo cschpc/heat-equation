@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 CSC - IT Center for Science Ltd. <www.csc.fi>
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #ifndef __HEAT_H__
 #define __HEAT_H__
 

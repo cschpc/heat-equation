@@ -1,3 +1,7 @@
+! SPDX-FileCopyrightText: 2021 CSC - IT Center for Science Ltd. <www.csc.fi>
+!
+! SPDX-License-Identifier: MIT
+
 module mo_roctx
   use iso_c_binding
   implicit none
