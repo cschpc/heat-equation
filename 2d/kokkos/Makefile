@@ -8,7 +8,7 @@ ifeq ($(COMP),)
 COMP=cuda
 endif
 
-COMMONDIR=../common
+COMMONDIR=../../common
 
 ifeq ($(COMP),cuda)
 CXX=mpicxx

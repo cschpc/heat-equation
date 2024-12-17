@@ -2,7 +2,7 @@ ifeq ($(COMP),)
 COMP=pgi
 endif
 
-COMMONDIR=../../common
+COMMONDIR=../../../common
 
 ifeq ($(COMP),pgi)
 FC=mpif90

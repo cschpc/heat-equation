@@ -2,7 +2,7 @@ ifeq ($(COMP),)
 COMP=gnu
 endif
 
-COMMONDIR=../common
+COMMONDIR=../../common
 
 ifeq ($(COMP),pgi)
 CXX=mpicxx
