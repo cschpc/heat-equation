@@ -1,9 +1,12 @@
-# Two dimensional heat equation
+# Heat equation solver
 
-Example implementations of two dimensional heat equation with various parallel
-programming approaches.
+This repository contains various implementations of simple heat equation with 
+various parallel programming approaches.
 
-Heat (or diffusion) equation is
+The two dimensional versions under [2d](2d) are more suitable as basis training material, the three dimensional versions under [3d](3d) can be used also for simple performance
+testing of different programming approaches.
+
+## Description of two dimensional problem
 
 <!-- Equation
 \frac{\partial u}{\partial t} = \alpha \nabla^2 u
