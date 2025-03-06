@@ -32,41 +32,18 @@ target_sources(
     main.cpp
     )
 
-# Add any MPI options and definitions
-target_compile_options(${staticlib}
-    PRIVATE
-    ${MPI_C_COMPILE_OPTIONS}
-    )
-
-target_compile_options(${sharedlib}
-    PRIVATE
-    ${MPI_C_COMPILE_OPTIONS}
-    )
-
-target_compile_definitions(${staticlib}
-    PRIVATE
-    ${MPI_C_COMPILE_DEFINITIONS}
-    )
-
-target_compile_definitions(${sharedlib}
-    PRIVATE
-    ${MPI_C_COMPILE_DEFINITIONS}
-    )
-
 # Add some include directories with the SYSTEM flag.
 # This means our own compile options don't trigger warnings/errors
 # from those header files
 target_include_directories(${staticlib}
     SYSTEM
     PRIVATE
-    ${MPI_C_INCLUDE_DIRS}
     ${dependencies}
     )
 
 target_include_directories(${sharedlib}
     SYSTEM
     PRIVATE
-    ${MPI_C_INCLUDE_DIRS}
     ${dependencies}
     )
 
@@ -88,7 +65,6 @@ target_include_directories(${sharedlib}
 target_include_directories(${binary}
     SYSTEM
     PRIVATE
-    ${MPI_C_INCLUDE_DIRS}
     ${dependencies}
     )
 
@@ -98,27 +74,15 @@ target_include_directories(${binary}
     ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
-# The static and shared libraries link with MPI and the object library
-target_link_options(${staticlib}
-    PRIVATE
-    ${MPI_C_LINK_FLAGS}
-    )
-
-target_link_options(${sharedlib}
-    PRIVATE
-    ${MPI_C_LINK_FLAGS}
-    )
-
+# The static and shared libraries link with MPI
 target_link_libraries(${staticlib}
     PRIVATE
-    ${objs}
-    ${MPI_C_LIBRARIES}
+    MPI::MPI_CXX
     )
 
 target_link_libraries(${sharedlib}
     PRIVATE
-    ${objs}
-    ${MPI_C_LIBRARIES}
+    MPI::MPI_CXX
     )
 
 # The executable links with the static library
