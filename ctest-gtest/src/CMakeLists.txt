@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.18)
 # Get MPI
 find_package(MPI REQUIRED)
 
+message(STATUS "Run: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS")
+
 # Set variables
 set(staticlib ${PROJECT_NAME})
 set(sharedlib ${PROJECT_NAME}-shared)
@@ -86,7 +88,11 @@ target_link_libraries(${sharedlib}
     )
 
 # The executable links with the static library
-target_link_libraries(${binary} PUBLIC ${staticlib})
+target_link_libraries(${binary}
+    PUBLIC
+    ${staticlib}
+    MPI::MPI_CXX
+    )
 
 install(
     TARGETS ${staticlib} ${sharedlib} ${binary}
