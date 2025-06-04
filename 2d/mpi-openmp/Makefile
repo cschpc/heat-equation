@@ -7,26 +7,26 @@ COMMONDIR=../../common
 ifeq ($(COMP),pgi)
 CXX=mpicxx
 CC=pgcc
-CCFLAGS=-g -O3 -fopenmp -I$(COMMONDIR)
-LDFLAGS=-fopenmp
+CCFLAGS+=-g -O3 -fopenmp -I$(COMMONDIR)
+LDFLAGS+=-fopenmp
 LIBS=
 endif
 
 ifeq ($(COMP),gnu)
 CXX=mpicxx
 CC=gcc
-CCFLAGS=-g -O3 -fopenmp -Wall -I$(COMMONDIR)
-LDFLAGS=-fopenmp
+CCFLAGS+=-g -O3 -fopenmp -Wall -I$(COMMONDIR)
+LDFLAGS+=-fopenmp
 LIBS=
 endif
 
 ifeq ($(COMP),intel)
 CXX=mpicxx
 CC=gcc
-CCFLAGS=-g -O3 -qopenmp -I$(COMMONDIR)
-LDFLAGS=-qopenmp
-# CCFLAGS=-g -O3 -I$(COMMONDIR)
-# LDFLAGS=
+CCFLAGS+=-g -O3 -qopenmp -I$(COMMONDIR)
+LDFLAGS+=-qopenmp
+# CCFLAGS+=-g -O3 -I$(COMMONDIR)
+# LDFLAGS+=
 LIBS=
 endif
 
