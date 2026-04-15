@@ -8,7 +8,7 @@
 #include <iomanip> 
 #include <fstream>
 #include <iostream>
-#include <string>
+#include <array>
 #ifndef NO_MPI
 #include <mpi.h>
 #endif
@@ -32,15 +32,17 @@ void write_field(Field& field, const int iter, const ParallelData& parallel)
         auto full_data = Matrix<double>(height, width, length);
         for (int i = 0; i < field.nx; i++)
             for (int j = 0; j < field.ny; j++) 
-              for (int k = 0; k < field.nz; k++) 
-                 full_data(i, j, k) = field(i + 1, j + 1, k + 1);
+                for (int k = 0; k < field.nz; k++) 
+                    full_data(i, j, k) = field(i + 1, j + 1, k + 1);
           
 #ifndef NO_MPI     
         // Receive data from other ranks
         for (int p = 1; p < parallel.size; p++) {
-            int ix = parallel.coords[0] * field.nx;
-            int iy = parallel.coords[1] * field.ny;
-            int iz = parallel.coords[2] * field.nz;
+            std::array<int, 3> rank_coords;
+            MPI_Cart_coords(parallel.comm, p, 3, rank_coords.data());
+            int ix = rank_coords[0] * field.nx;
+            int iy = rank_coords[1] * field.ny;
+            int iz = rank_coords[2] * field.nz;
             MPI_Recv(full_data.data(ix, iy, iz), 1, parallel.subarraytype, p, 22,
                      parallel.comm, MPI_STATUS_IGNORE);
         }
